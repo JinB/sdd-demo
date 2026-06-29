@@ -1,0 +1,72 @@
+meta:
+  name: sdd-demo
+  version: "1.0"
+
+infrastructure:
+  provider: aws
+  region: eu-central-1
+  instance_type: t3.small
+  os: ubuntu-24.04
+  security_group:
+    name: sg-spec-demo
+    inbound:
+      - { port: 22,  cidr: 0.0.0.0/0 }
+      - { port: 80,  cidr: 0.0.0.0/0 }
+      - { port: 443, cidr: 0.0.0.0/0 }
+    outbound:
+      - { port: all, cidr: 0.0.0.0/0 }
+
+secrets:
+  store: aws-secrets-manager
+  keys:
+    - db_password
+    - wp_admin_password
+    - gh_deploy_key
+
+services:
+  wordpress:
+    title: Eugenio WP
+    image: wordpress:latest
+    port: 8080
+    domain: wp.bball.klarr.us
+    categories: [Sport, Software]
+
+  mysql:
+    image: mysql:8.0
+    secret_ref: db_password
+
+  astro:
+    title: Eugenio Astro
+    port: 4321
+    domain: astro.bball.klarr.us
+    mode: ssg
+    features:
+      dark_light_switcher: true
+      live_clock:
+        format: HH:mm:ss
+        timezone: Intl
+    categories: [Sport, Software]
+
+routing:
+  engine: nginx
+  ssl: letsencrypt
+  upstreams:
+    - service: wordpress
+      domain: wp.bball.klarr.us
+      proxy_port: 8080
+    - service: astro
+      domain: astro.bball.klarr.us
+      serve_static: /var/www/sdd-demo/astro/dist
+
+cicd:
+  provider: github-actions
+  trigger: wordpress-webhook
+  steps:
+    - fetch_posts:
+        url: "https://wp.bball.klarr.us/wp-json/wp/v2/posts"
+        params: { per_page: 100, page: 1 }
+    - build_astro:
+        replaces: ./astro/src/content/blog
+    - deploy:
+        method: rsync-ssh
+        secret_ref: gh_deploy_key
