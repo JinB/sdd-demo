@@ -1,0 +1,33 @@
+---
+import LiveClock from "./LiveClock.tsx";
+import ThemeToggle from "./ThemeToggle.tsx";
+---
+
+<header>
+  <a href="/" class="site-title">Eugenio Astro</a>
+  <div class="header-controls">
+    <LiveClock client:only="react" />
+    <ThemeToggle client:load />
+  </div>
+</header>
+
+<style>
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid currentColor;
+  }
+  .site-title {
+    font-weight: bold;
+    font-size: 1.25rem;
+    text-decoration: none;
+    color: inherit;
+  }
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+</style>

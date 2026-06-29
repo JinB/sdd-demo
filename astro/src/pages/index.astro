@@ -1,14 +1,28 @@
 ---
+import { getCollection } from "astro:content";
+import Header from "../components/Header.astro";
+import CategoryFilter from "../components/CategoryFilter.tsx";
 import "../styles/global.css";
+
+const entries = await getCollection("blog");
+const posts = entries.map((e) => ({
+  title: e.data.title,
+  category: e.data.category,
+  slug: e.id,
+  excerpt: e.data.excerpt,
+}));
 ---
+
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
     <title>Eugenio Astro</title>
   </head>
   <body>
+    <Header />
     <main>
-      <p>Eugenio Astro</p>
+      <CategoryFilter posts={posts} client:load />
     </main>
   </body>
 </html>
