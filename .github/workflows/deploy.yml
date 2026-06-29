@@ -1,0 +1,57 @@
+name: Deploy on WordPress Post Change
+
+on:
+  repository_dispatch:
+    types: [wordpress-post-change]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install OpenSpec dependencies
+        run: pip install -r openspec/requirements.txt
+
+      - name: Validate OpenSpec
+        run: python openspec/validate.py
+
+      - name: Fetch WordPress posts
+        run: |
+          curl -s "https://wp.bball.klarr.us/wp-json/wp/v2/posts?per_page=100&page=1&_embed" \
+            -o posts.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Astro dependencies
+        run: npm ci
+        working-directory: ./astro
+
+      - name: Generate content files from posts
+        run: node scripts/generate-content.js
+
+      - name: Build Astro
+        run: npm run build
+        working-directory: ./astro
+
+      - name: Deploy via rsync
+        env:
+          DEPLOY_KEY: ${{ secrets.GH_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            ./astro/dist/ \
+            ubuntu@astro.bball.klarr.us:/var/www/sdd-demo/astro/dist/
