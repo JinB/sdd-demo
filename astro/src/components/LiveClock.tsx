@@ -14,7 +14,7 @@ export default function LiveClock() {
   const [timezone, setTimezone] = useState<string>("");
 
   useEffect(() => {
-    setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    setTimezone(new Intl.DateTimeFormat().resolvedOptions().timeZone);
     setTime(formatTime(new Date()));
 
     const interval = setInterval(() => {
