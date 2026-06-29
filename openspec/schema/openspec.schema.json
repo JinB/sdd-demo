@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["meta", "infrastructure", "secrets", "services", "routing", "cicd"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" }
+      }
+    },
+    "infrastructure": {
+      "type": "object",
+      "required": ["provider", "region", "instance_type", "os", "security_group"],
+      "properties": {
+        "provider": { "type": "string", "enum": ["aws"] },
+        "region": { "type": "string" },
+        "instance_type": { "type": "string" },
+        "os": { "type": "string" },
+        "security_group": {
+          "type": "object",
+          "required": ["name", "inbound", "outbound"],
+          "properties": {
+            "name": { "type": "string" },
+            "inbound": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["port", "cidr"],
+                "properties": {
+                  "port": {},
+                  "cidr": { "type": "string" }
+                }
+              }
+            },
+            "outbound": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["port", "cidr"],
+                "properties": {
+                  "port": {},
+                  "cidr": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "secrets": {
+      "type": "object",
+      "required": ["store", "keys"],
+      "properties": {
+        "store": { "type": "string", "enum": ["aws-secrets-manager"] },
+        "keys": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+      }
+    },
+    "services": {
+      "type": "object",
+      "required": ["wordpress", "mysql", "astro"],
+      "properties": {
+        "wordpress": {
+          "type": "object",
+          "required": ["title", "image", "port", "domain", "categories"]
+        },
+        "mysql": {
+          "type": "object",
+          "required": ["image", "secret_ref"]
+        },
+        "astro": {
+          "type": "object",
+          "required": ["title", "port", "domain", "mode", "categories"],
+          "properties": {
+            "mode": { "type": "string", "enum": ["ssg", "ssr"] }
+          }
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "required": ["engine", "ssl", "upstreams"],
+      "properties": {
+        "engine": { "type": "string", "enum": ["nginx"] },
+        "ssl": { "type": "string", "enum": ["letsencrypt"] },
+        "upstreams": { "type": "array", "minItems": 2 }
+      }
+    },
+    "cicd": {
+      "type": "object",
+      "required": ["provider", "trigger", "steps"],
+      "properties": {
+        "provider": { "type": "string", "enum": ["github-actions"] },
+        "trigger": { "type": "string" },
+        "steps": { "type": "array", "minItems": 1 }
+      }
+    }
+  }
+}
