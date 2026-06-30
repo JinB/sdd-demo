@@ -1,7 +1,7 @@
 # Eugenio SDD Demo — Design Spec
 
 **Date:** 2026-06-29  
-**Last updated:** 2026-06-30 (Next.js added)  
+**Last updated:** 2026-06-30 (Next.js added; shared site nav bar)  
 **Approach:** OpenSpec Spec-Anchored  
 **Status:** Approved — implemented and live
 
@@ -264,6 +264,19 @@ Images uploaded to WordPress are instantly available at `/media/filename.jpg` on
 ---
 
 ## 7. Astro Frontend
+
+### SiteNav Bar
+
+A 2rem-high horizontal bar rendered below the main header on every page of all three SSG sites. Contains:
+
+- **WP Admin ↗** and **Add Post ↗** — open WordPress admin in a new tab
+- Separator
+- **Astro** · **Docusaurus** · **Next.js** — navigate between sites in the same tab; the current site is highlighted in accent colour with `pointer-events: none`
+
+Implementation per framework:
+- Astro: `SiteNav.astro` component injected after `<Header />` in each page template
+- Docusaurus: `src/theme/Root.js` swizzle wraps all content; `SiteNav.js` renders before `{children}`
+- Next.js: `SiteNav.tsx` component injected after `<Header />` in root `layout.tsx`
 
 ### CategoryFilter (React Island)
 - `client:load` hydration

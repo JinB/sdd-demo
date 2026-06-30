@@ -49,6 +49,7 @@ services:
       live_clock:
         format: HH:mm:ss
         timezone: Intl
+      site_nav: true
     categories: [Sport, Travel, Uncategorized]
 
   docusaurus:
@@ -61,6 +62,7 @@ services:
       live_clock:
         format: HH:mm:ss
         timezone: Intl
+      site_nav: true
 
   nextjs:
     title: Eugenio Next.js
@@ -73,6 +75,7 @@ services:
       live_clock:
         format: HH:mm:ss
         timezone: Intl
+      site_nav: true
 
 routing:
   engine: nginx

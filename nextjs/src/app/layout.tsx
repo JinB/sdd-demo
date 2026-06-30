@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
+import SiteNav from "@/components/SiteNav";
 import Footer from "@/components/Footer";
 import "./globals.css";
 
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <Header />
+        <SiteNav />
         {children}
         <Footer />
       </body>
