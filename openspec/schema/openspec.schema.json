@@ -56,7 +56,9 @@
       "required": ["store", "keys"],
       "properties": {
         "store": { "type": "string", "enum": ["aws-secrets-manager"] },
-        "keys": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+        "keys": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "github_actions": { "type": "array", "items": { "type": "string" } },
+        "server_env": { "type": "array", "items": { "type": "string" } }
       }
     },
     "services": {

@@ -25,7 +25,11 @@ secrets:
   keys:
     - db_password
     - wp_admin_password
-    - gh_deploy_key
+  github_actions:
+    - gh_deploy_key       # SSH private key for rsync
+    - sendgrid_api_key    # SendGrid API key for email notifications
+  server_env:
+    - gh_deploy_token     # GitHub PAT used by WP trigger plugin
 
 services:
   wordpress:

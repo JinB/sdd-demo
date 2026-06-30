@@ -1,7 +1,7 @@
 # Eugenio SDD Demo — Design Spec
 
 **Date:** 2026-06-29
-**Last updated:** 2026-06-30 (Next.js added; site nav bar; per-site deploy; Docusaurus title centered)
+**Last updated:** 2026-06-30 (Next.js; site nav; per-site deploy; WP trigger plugin; SendGrid notifications)
 **Approach:** OpenSpec Spec-Anchored
 **Status:** Approved — implemented and live
 
@@ -261,8 +261,16 @@ sdd-demo/
 - Let's Encrypt SSL via Certbot with auto-renewal cron
 
 **Secrets**
-- AWS Secrets Manager stores: `db_password`, `wp_admin_password`, `gh_deploy_key`
-- Docker Compose reads DB credentials via environment at startup
+
+| Secret | Store | Used by |
+|--------|-------|---------|
+| `db_password` | AWS Secrets Manager | Docker Compose / MySQL |
+| `wp_admin_password` | AWS Secrets Manager | WordPress setup |
+| `GH_DEPLOY_KEY` | GitHub Actions secret | rsync SSH to server |
+| `GH_DEPLOY_TOKEN` | Server `.env` file | WP trigger plugin → GitHub API |
+| `SENDGRID_API_KEY` | GitHub Actions secret | Deploy email notifications |
+
+Docker Compose reads DB credentials and `GH_DEPLOY_TOKEN` via environment at startup.
 
 ---
 
@@ -422,7 +430,29 @@ All domains: HTTPS enforced, HTTP redirects to HTTPS, single SAN Let's Encrypt c
 
 ---
 
-## 12. CI/CD (GitHub Actions)
+## 12. WordPress Auto-Deploy Trigger
+
+A small plugin at `wp-plugins/sdd-deploy-trigger/sdd-deploy-trigger.php` hooks into `save_post` and calls the GitHub API whenever a post is published or updated:
+
+```
+POST https://api.github.com/repos/JinB/sdd-demo/dispatches
+{ "event_type": "wordpress-post-change" }
+Authorization: Bearer <GH_DEPLOY_TOKEN>
+```
+
+The plugin file is bind-mounted into the WordPress container via `docker-compose.yml`:
+```yaml
+volumes:
+  - /var/www/sdd-demo/wp-plugins/sdd-deploy-trigger:/var/www/html/wp-content/plugins/sdd-deploy-trigger
+```
+
+`GH_DEPLOY_TOKEN` is a GitHub fine-grained PAT with **Actions: Read and write** permission, passed to the container via the `GH_DEPLOY_TOKEN` env var in the server's `.env` file. The plugin reads it with `getenv('GH_DEPLOY_TOKEN')`.
+
+After the container is started with the mount in place, activate the plugin in WP Admin → Plugins.
+
+---
+
+## 13. CI/CD (GitHub Actions)
 
 **Triggers:**
 - WordPress webhook on post create/update/delete → `repository_dispatch: wordpress-post-change`
@@ -433,15 +463,17 @@ All domains: HTTPS enforced, HTTP redirects to HTTPS, single SAN Let's Encrypt c
 1. `openspec validate` — abort if spec and implementation have drifted
 2. Fetch all posts from `https://wp.4eng.online/wp-json/wp/v2/posts?per_page=100&page=1&_embed`
 3. Setup SSH key from `GH_DEPLOY_KEY` secret
-4. **Astro**: `node scripts/generate-content.js` → `npm run build` → rsync `astro/dist/` to server
-5. **Next.js**: `node scripts/generate-nextjs-content.js` → `npm run build` → rsync `nextjs/out/` to server
-6. **Docusaurus**: `node scripts/generate-docusaurus-content.js` → `npm run build` → rsync `docusaurus/build/` to server
+4. **Astro**: install → generate → build → `ssh mkdir -p` → rsync `astro/dist/`
+5. **Next.js**: install → generate → build → `ssh mkdir -p` → rsync `nextjs/out/`
+6. **Docusaurus**: install → generate → build → `ssh mkdir -p` → rsync `docusaurus/build/`
+7. **Notify** (`if: always()`): SendGrid email to `eugenio.besson@gmail.com` with status, site links, and run URL
 
+`ssh mkdir -p` ensures target directories exist before each rsync.
 Node version: `22` (required by Astro 7 / `>=22.12.0`).
 
 ---
 
-## 13. OpenSpec Validator
+## 14. OpenSpec Validator
 
 **Entry point:** `python openspec/validate.py`
 
@@ -472,7 +504,7 @@ All checks passed.
 
 ---
 
-## 14. Key Constraints
+## 15. Key Constraints
 
 - Astro, Docusaurus, and Next.js run in SSG mode — no containers in production
 - Nginx serves all three static sites' output directories directly (not proxied)

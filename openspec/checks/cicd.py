@@ -8,7 +8,7 @@ def check(spec: dict, base_dir: str = ".") -> list[str]:
     if not workflow_path.exists():
         return [".github/workflows/deploy.yml not found"]
 
-    data = yaml.safe_load(workflow_path.read_text())
+    data = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
     failures: list[str] = []
 
     # PyYAML 1.1 parses bare `on:` key as boolean True

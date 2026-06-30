@@ -1,92 +1,110 @@
-# sdd-demo
+# SDD Demo — Spec-Anchored WordPress/Astro/Docusaurus/Next.js
 
-A spec-anchored WordPress/Astro/Docusaurus demo on a single AWS EC2 instance. `openspec.yaml` is the single source of truth — all infrastructure files conform to it and are validated before every deploy.
+A single AWS EC2 instance running four web properties from one codebase.
+`openspec.yaml` is the single source of truth — every infrastructure file
+(Terraform, Docker Compose, Nginx, GitHub Actions) is validated against it
+before each deploy.
+
+**Live sites:**
+
+| Site | URL | Framework |
+|------|-----|-----------|
+| Blog (Astro) | https://astro.4eng.online | Astro 7 SSG |
+| Blog (Docusaurus) | https://docu.4eng.online | Docusaurus 3 SSG |
+| Blog (Next.js) | https://next.4eng.online | Next.js 15 SSG |
+| CMS | https://wp.4eng.online | WordPress (Docker) |
+
+---
+
+## How it works
+
+1. A post is published or updated in WordPress
+2. A lightweight WP plugin fires a `repository_dispatch` webhook to GitHub
+3. GitHub Actions validates the spec, fetches posts from the WP REST API, then for each SSG site: generates content → builds → deploys via rsync
+4. A SendGrid email confirms success or reports failure
+
+All three SSG sites show the same WordPress content rendered with different frameworks, making it easy to compare them side by side.
+
+---
 
 ## Stack
 
-- **WordPress** — content backend, Docker container on port 8080
-- **MySQL** — database, Docker container (internal network only)
-- **Astro** — static frontend (SSG), served by nginx from `astro/dist`
-- **Docusaurus** — static blog (SSG), served by nginx from `docusaurus/build`
-- **Next.js** — static frontend (SSG), served by nginx from `nextjs/out`
-- **Nginx** — reverse proxy + static file server, Let's Encrypt SSL
-- **Terraform** — provisions EC2 (`t3.small`, `eu-central-1`), security group, IAM role with Route 53 permissions, Secrets Manager secrets
-- **GitHub Actions** — triggered by WordPress webhook; fetches posts, builds Astro + Docusaurus + Next.js, deploys all via rsync
+| Layer | Technology |
+|-------|-----------|
+| Content backend | WordPress + MySQL (Docker Compose) |
+| Static sites | Astro 7 · Docusaurus 3.7 · Next.js 15 (all SSG) |
+| Reverse proxy / SSL | Nginx + Let's Encrypt (SAN cert, one for all domains) |
+| Infrastructure | Terraform → AWS EC2 `t3.small` `eu-central-1` |
+| Secrets | AWS Secrets Manager · GitHub Actions secrets |
+| CI/CD | GitHub Actions — webhook-triggered or manual |
+| Email alerts | SendGrid API |
 
-## OpenSpec Validator
+---
 
-Validates that all implementation files match `openspec.yaml` before every deploy.
+## Features (all three SSG sites)
+
+- **Live clock** — `HH:mm:ss · Continent/City` in the header, browser timezone via `Intl`
+- **Dark / light mode** — persisted in `localStorage`, flash-free on load
+- **Category filter** — client-side, no page reload
+- **Inter-site nav bar** — links between Astro, Docusaurus, Next.js and WP Admin; current site highlighted
+- **Featured images** — extracted from WP posts, served from a shared `/media/` path on all domains
+- **About footer** — each site describes its own framework pros and cons
+
+---
+
+## Spec-Anchored Development
+
+`openspec.yaml` defines the entire system. The validator checks conformance across all implementation files:
 
 ```bash
 pip install -r openspec/requirements.txt
 python openspec/validate.py
 ```
 
-Checks: schema, Terraform, Docker Compose, Nginx, CI/CD workflow.
+```
+[PASS] schema
+[PASS] terraform
+[PASS] docker
+[PASS] nginx
+[PASS] cicd
 
-## Astro Frontend
-
-Categories: **Sport** | **Travel** | **Uncategorized**
-
-Features:
-- Category filter (React island, client-side)
-- Live clock with browser timezone (`HH:mm:ss · Continent/City`)
-- Dark/light mode toggle with localStorage persistence
-
-```bash
-cd astro
-npm install
-npm test       # 27 tests
-npm run build  # outputs to astro/dist
+All checks passed.
 ```
 
-## Next.js Frontend
+The `Validate OpenSpec` step runs first in every CI/CD pipeline run — a drift between spec and implementation blocks the deploy.
 
-Same WordPress posts published as a Next.js static site.
+---
 
-Features:
-- Category filter (client component, `"use client"`)
-- Live clock with browser timezone (`HH:mm:ss · Continent/City`) in the navbar
-- Dark/light mode toggle with localStorage persistence (flash-free via inline script)
-- Featured image hero on post pages
+## Local development
 
 ```bash
-cd nextjs
-npm install
-npm run build  # outputs to nextjs/out
-npm run dev    # dev server at http://localhost:3001
+# Astro
+cd astro && npm install && npm run dev      # http://localhost:4321
+
+# Next.js
+cd nextjs && npm install && npm run dev     # http://localhost:3001
+
+# Docusaurus
+cd docusaurus && npm install && npm start   # http://localhost:3000
 ```
 
-## Docusaurus Frontend
-
-Same WordPress posts published as a Docusaurus blog.
-
-Features:
-- Live clock with browser timezone (`HH:mm:ss · Continent/City`) in the navbar
-- All-posts sidebar
-- Tags: Sport / Travel / Uncategorized
+Generate content from WordPress (requires `posts.json`):
 
 ```bash
-cd docusaurus
-npm install
-npm run build  # outputs to docusaurus/build
-npm start      # dev server at http://localhost:3000
+curl -s "https://wp.4eng.online/wp-json/wp/v2/posts?per_page=100&page=1&_embed" -o posts.json
+node scripts/generate-content.js
+node scripts/generate-nextjs-content.js
+node scripts/generate-docusaurus-content.js
 ```
 
-## Domains
-
-| Domain | Service |
-|--------|---------|
-| `wp.4eng.online` | WordPress (proxied from port 8080) |
-| `astro.4eng.online` | Astro static site |
-| `docu.4eng.online` | Docusaurus static blog |
-| `next.4eng.online` | Next.js static site |
-
-All three domains share a `/media/` path for WordPress uploads.
+---
 
 ## Secrets
 
-Stored in AWS Secrets Manager under `sdd-demo/`:
-- `db_password`
-- `wp_admin_password`
-- `gh_deploy_key`
+| Secret | Where stored | Used by |
+|--------|-------------|---------|
+| `db_password` | AWS Secrets Manager | Docker Compose / MySQL |
+| `wp_admin_password` | AWS Secrets Manager | WordPress setup |
+| `GH_DEPLOY_KEY` | GitHub Actions secret | rsync SSH to server |
+| `GH_DEPLOY_TOKEN` | Server `.env` file | WP plugin → GitHub API |
+| `SENDGRID_API_KEY` | GitHub Actions secret | Deploy email notifications |
