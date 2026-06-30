@@ -35,15 +35,15 @@ jobs:
           node-version: "22"
 
       - name: Install Astro dependencies
-        run: npm ci
+        run: npm install
         working-directory: ./astro
 
       - name: Install Docusaurus dependencies
-        run: npm ci
+        run: npm install
         working-directory: ./docusaurus
 
       - name: Install Next.js dependencies
-        run: npm ci
+        run: npm install
         working-directory: ./nextjs
 
       - name: Setup SSH key
