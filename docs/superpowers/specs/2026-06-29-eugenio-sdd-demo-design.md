@@ -247,6 +247,7 @@ sdd-demo/
 - OS: Ubuntu 24.04
 - Instance type: `t3.small` (2 vCPU, 2 GB RAM)
 - Security group `sg-spec-demo`: inbound 22/80/443 from all; outbound unrestricted
+- No Elastic IP — public IP is dynamic; Route 53 is updated automatically on every boot (see §16)
 
 **IAM**
 - Role: `sdd-demo-ec2-role` — attached to the EC2 instance via instance profile
@@ -521,6 +522,35 @@ All checks passed.
 ```
 
 **CI gate:** `deploy.yml` runs `openspec validate` as its first step. Deploy is blocked on any failure.
+
+---
+
+## 16. Dynamic DNS (Route 53 on boot)
+
+No Elastic IP is used — the EC2 public IP changes on every start. A systemd one-shot service runs `update-dns.sh` after the network is online and updates all four A records via the AWS CLI.
+
+**Files (committed to repo under `server/`):**
+- `server/update-dns.sh` — fetches public IP from IMDSv2 metadata, resolves hosted zone by name, upserts A records in a single batch call
+- `server/update-dns.service` — systemd unit: `After=network-online.target`, `Type=oneshot`
+
+**Subdomains updated:** `wp`, `astro`, `docu`, `next` (all pointing to the same EC2 IP)  
+**TTL:** 60 seconds — propagates within a minute of instance start  
+**Auth:** EC2 IAM instance role `sdd-demo-ec2-role` with `route53_update` policy — no credentials needed on the instance
+
+**One-time server setup:**
+```bash
+sudo cp server/update-dns.sh /usr/local/bin/update-dns.sh
+sudo chmod +x /usr/local/bin/update-dns.sh
+sudo cp server/update-dns.service /etc/systemd/system/update-dns.service
+sudo systemctl daemon-reload
+sudo systemctl enable update-dns
+sudo systemctl start update-dns   # run immediately, verify it works
+```
+
+After that, every `sudo systemctl start` / reboot updates DNS automatically. Check logs with:
+```bash
+journalctl -u update-dns
+```
 
 ---
 
