@@ -6,24 +6,30 @@
 
 **Architecture:** OpenSpec Spec-Anchored — `openspec.yaml` defines intent; Terraform, Docker Compose, Nginx, and GitHub Actions are handwritten but validated against the spec via `openspec/validate.py`. Astro runs in SSG mode; Nginx serves the built static files directly. WordPress runs in a Docker container on port 8080.
 
-**Tech Stack:** Python 3.11 (validator), python-hcl2, PyYAML, jsonschema, Terraform ~5.0, Docker Compose v2, Nginx, Astro 4.x, React 18, TypeScript, Vitest, @testing-library/react
+**Tech Stack:** Python 3.11 (validator), python-hcl2, PyYAML, jsonschema, Terraform ~5.0, Docker Compose v2, Nginx, Astro 7.x, React 19, TypeScript, Vitest 4.x, @testing-library/react, Docusaurus 3.7
 
 ## Global Constraints
+
+> **Note:** Values below reflect the current live state after post-implementation changes (domain migration, category update, IAM addition, Docusaurus addition). Original plan values have been updated in place to avoid confusion.
 
 - Project name: `sdd-demo` (verbatim, used in all resource names)
 - AWS region: `eu-central-1`
 - Instance type: `t3.small`
 - OS: `ubuntu-24.04`
 - Security group name: `sg-spec-demo`
-- WordPress domain: `wp.bball.klarr.us`, container port: `8080`
-- Astro domain: `astro.bball.klarr.us`, mode: `ssg` (no Astro container in production)
-- Static files path on EC2: `/var/www/sdd-demo/astro/dist`
+- IAM role: `sdd-demo-ec2-role` with `route53_update` inline policy
+- WordPress domain: `wp.4eng.online`, container port: `8080`
+- Astro domain: `astro.4eng.online`, mode: `ssg` (no Astro container in production)
+- Docusaurus domain: `docu.4eng.online`, mode: `ssg`, build output: `build/`
+- Static files paths on EC2: `/var/www/sdd-demo/astro/dist`, `/var/www/sdd-demo/docusaurus/build`
+- Shared media path: `/var/www/sdd-demo/media` (Docker bind mount + nginx alias at `/media/`)
 - Secret store: `aws-secrets-manager`
 - Secret keys: `db_password`, `wp_admin_password`, `gh_deploy_key`
-- Categories: `Sport`, `Software`
-- Posts fetch URL: `https://wp.bball.klarr.us/wp-json/wp/v2/posts?per_page=100&page=1`
+- Categories: `Sport`, `Travel`, `Uncategorized` (Uncategorized is fallback)
+- Posts fetch URL: `https://wp.4eng.online/wp-json/wp/v2/posts?per_page=100&page=1&_embed`
 - Clock format: `HH:mm:ss`, timezone source: browser `Intl.DateTimeFormat`
-- WordPress title: `Eugenio WP`, Astro title: `Eugenio Astro`
+- WordPress title: `Eugenio WP`, Astro title: `Eugenio Astro`, Docusaurus title: `Eugenio Docu`
+- Node version: `22` (Astro 7 requires `>=22.12.0`)
 
 ---
 
@@ -52,34 +58,39 @@ sdd-demo/
 │       ├── test_nginx.py
 │       └── test_cicd.py
 ├── terraform/
-│   ├── main.tf
-│   ├── variables.tf
-│   └── outputs.tf
-├── docker-compose.yml
-├── nginx/default.conf
-├── scripts/generate-content.js
+│   ├── main.tf          ← includes IAM role, instance profile, route53 policy
+│   └── variables.tf
+├── docker-compose.yml   ← wordpress uploads volume: /var/www/sdd-demo/media
+├── nginx/default.conf   ← 3 upstream domains + /media/ shared location
+├── scripts/
+│   ├── generate-content.js            ← WP posts → astro/src/content/blog/
+│   └── generate-docusaurus-content.js ← WP posts → docusaurus/blog/
 ├── .github/workflows/deploy.yml
-└── astro/
-    ├── astro.config.mjs
+├── astro/
+│   ├── astro.config.mjs
+│   ├── package.json
+│   ├── vitest.config.ts
+│   ├── src/
+│   │   ├── content.config.ts          ← Astro 5+ Content Layer API (glob loader)
+│   │   ├── content/blog/.gitkeep
+│   │   ├── pages/index.astro          ← uses e.id (not e.slug) for Astro 7
+│   │   ├── styles/global.css
+│   │   ├── components/
+│   │   │   ├── CategoryFilter.tsx     ← All / Sport / Travel / Uncategorized
+│   │   │   ├── LiveClock.tsx
+│   │   │   ├── ThemeToggle.tsx
+│   │   │   └── Header.astro
+│   │   └── tests/
+│   │       ├── setup.ts
+│   │       ├── CategoryFilter.test.tsx
+│   │       ├── LiveClock.test.tsx
+│   │       └── ThemeToggle.test.tsx
+│   └── tsconfig.json
+└── docusaurus/
+    ├── docusaurus.config.js   ← blog-only, routeBasePath: "/"
     ├── package.json
-    ├── vitest.config.ts
-    ├── src/
-    │   ├── content/
-    │   │   ├── config.ts
-    │   │   └── blog/.gitkeep
-    │   ├── pages/index.astro
-    │   ├── styles/global.css
-    │   ├── components/
-    │   │   ├── CategoryFilter.tsx
-    │   │   ├── LiveClock.tsx
-    │   │   ├── ThemeToggle.tsx
-    │   │   └── Header.astro
-    │   └── tests/
-    │       ├── setup.ts
-    │       ├── CategoryFilter.test.tsx
-    │       ├── LiveClock.test.tsx
-    │       └── ThemeToggle.test.tsx
-    └── tsconfig.json
+    ├── blog/.gitkeep          ← replaced by CI/CD on every deploy
+    └── src/css/custom.css
 ```
 
 ---
@@ -2272,3 +2283,51 @@ Expected: all 18 tests pass.
 git add astro/src/components/Header.astro astro/src/pages/index.astro
 git commit -m "feat: header with LiveClock and ThemeToggle, wire CategoryFilter to content collection"
 ```
+
+---
+
+## Post-Implementation Changes
+
+These changes were made after Tasks 1–11 were completed. All are reflected in the current codebase and `openspec.yaml`.
+
+### P1: Category update — Software → Travel + Uncategorized
+
+- Categories changed from `[Sport, Software]` to `[Sport, Travel, Uncategorized]`
+- `Uncategorized` is the fallback when a WP post has no matching category
+- Files updated: `openspec.yaml`, `astro/src/content.config.ts`, `astro/src/components/CategoryFilter.tsx`, `scripts/generate-content.js`, all tests
+
+### P2: Node version — 20 → 22
+
+- `deploy.yml` had `node-version: "20"`; Astro 7 requires `>=22.12.0`
+- Fixed to `node-version: "22"`
+
+### P3: Shared `/media/` location
+
+- WordPress uploads Docker volume bind-mounted to `/var/www/sdd-demo/media` on host
+- `location /media/ { alias /var/www/sdd-demo/media/; }` added to all nginx server blocks
+- Content generators rewrite `wp-content/uploads/` URLs to `/media/` in post body
+- Spec: `routing.shared_media.host_path` / `url_path`
+- nginx.py check updated to verify `location /media/` and `alias` are present
+
+### P4: Domain migration — `bball.klarr.us` → `4eng.online`
+
+- All three domains updated: `wp.4eng.online`, `astro.4eng.online`, `docu.4eng.online`
+- Files updated: `openspec.yaml`, `nginx/default.conf`, `deploy.yml`, `scripts/generate-content.js`, all test fixtures
+
+### P5: EC2 IAM role with Route 53 permissions
+
+- New Terraform resources: `aws_iam_role`, `aws_iam_role_policy` (Route 53), `aws_iam_instance_profile`
+- EC2 instance gets `iam_instance_profile` set
+- Spec: `infrastructure.iam.ec2_role` + `infrastructure.iam.policies`
+- terraform.py check updated with 4 new assertions; 3 new tests added
+
+### P6: Docusaurus SSG at `docu.4eng.online`
+
+- New service: Docusaurus 3.7 in blog-only mode (`docs: false`, blog at root `/`)
+- `scripts/generate-docusaurus-content.js` generates `docusaurus/blog/YYYY-MM-DD-slug.md`
+- Frontmatter: `title`, `date`, `tags: [Category]`, `description`
+- Nginx: new server block for `docu.4eng.online` → `root /var/www/sdd-demo/docusaurus/build`
+- CI/CD: `npm ci` + `npm run build` in `./docusaurus`, second rsync to `docu.4eng.online`
+- nginx.py check generalized to loop over all upstreams (no longer hardcoded for wp/astro)
+- cicd.py check: fails if docusaurus service in spec but no docusaurus step in workflow
+- 2 new tests added
