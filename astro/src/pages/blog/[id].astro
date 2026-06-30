@@ -21,12 +21,16 @@ const { Content } = await render(post);
     <meta name="viewport" content="width=device-width" />
     <title>{post.data.title} — Eugenio Astro</title>
     <meta name="description" content={post.data.excerpt} />
+    {post.data.image && <meta property="og:image" content={post.data.image} />}
   </head>
   <body>
     <Header />
     <main class="container">
       <a href="/" class="article-back">← All posts</a>
       <article class="post">
+        {post.data.image && (
+          <img src={post.data.image} alt={post.data.title} class="post-hero" />
+        )}
         <h1>{post.data.title}</h1>
         <div class="post-card-meta">
           <span class={`badge badge-${post.data.category}`}>{post.data.category}</span>

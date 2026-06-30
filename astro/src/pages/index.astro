@@ -12,6 +12,7 @@ const posts = entries
     slug: e.id,
     excerpt: e.data.excerpt,
     date: e.data.date,
+    image: e.data.image,
   }))
   .sort((a, b) => b.date.localeCompare(a.date));
 ---
