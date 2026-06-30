@@ -107,3 +107,24 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             ./docusaurus/build/ \
             ubuntu@docu.4eng.online:/var/www/sdd-demo/docusaurus/build/
+
+      # ── Notify ─────────────────────────────────────────────────────────────
+      - name: Notify
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.GMAIL_USERNAME }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: "${{ job.status == 'success' && '✅' || '❌' }} SDD deploy #${{ github.run_number }} — ${{ job.status }}"
+          to: eugenio.besson@gmail.com
+          from: ${{ secrets.GMAIL_USERNAME }}
+          body: |
+            Deploy run #${{ github.run_number }} finished with status: ${{ job.status }}
+
+            Astro:      https://astro.4eng.online
+            Next.js:    https://next.4eng.online
+            Docusaurus: https://docu.4eng.online
+
+            Details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
