@@ -36,4 +36,17 @@ def check(spec: dict, base_dir: str = ".") -> list[str]:
     if "ssl_certificate" not in content:
         failures.append("SSL certificates not configured in nginx/default.conf")
 
+    shared_media = spec.get("routing", {}).get("shared_media")
+    if shared_media:
+        media_host_path = shared_media["host_path"]
+        media_url_path = shared_media["url_path"].strip("/")
+        if f"location /{media_url_path}/" not in content:
+            failures.append(
+                f"shared_media: location /{media_url_path}/ not found in nginx config"
+            )
+        elif f"alias {media_host_path}/" not in content:
+            failures.append(
+                f"shared_media: expected alias {media_host_path}/ in /{media_url_path}/ block"
+            )
+
     return failures

@@ -50,6 +50,9 @@ services:
 routing:
   engine: nginx
   ssl: letsencrypt
+  shared_media:
+    host_path: /var/www/sdd-demo/media
+    url_path: /media
   upstreams:
     - service: wordpress
       domain: wp.bball.klarr.us
