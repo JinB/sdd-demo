@@ -46,7 +46,13 @@ const config = {
     },
     footer: {
       style: "dark",
-      copyright: "Built with Docusaurus.",
+      copyright:
+        "<strong>About Docusaurus</strong> — " +
+        "Docusaurus is an open-source SSG from Meta, purpose-built for documentation and blogs. " +
+        "It handles versioning, MDX, search, and i18n out of the box. " +
+        "Pros: opinionated defaults that work immediately, strong community, free Algolia DocSearch. " +
+        "Cons: tightly scoped to docs/blog formats, hard to deviate from its structure, " +
+        "can feel heavy for simple content needs.",
     },
     prism: {
       theme: prismThemes.github,

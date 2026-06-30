@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
 import CategoryFilter from "../components/CategoryFilter.tsx";
 import "../styles/global.css";
 
@@ -32,5 +33,6 @@ const posts = entries
       </div>
       <CategoryFilter posts={posts} client:load />
     </main>
+    <Footer />
   </body>
 </html>
