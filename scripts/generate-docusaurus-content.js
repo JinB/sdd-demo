@@ -1,8 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 
-const postsFile = path.join(__dirname, "..", "posts.json");
-const blogDir = path.join(__dirname, "..", "docusaurus", "blog");
+const postsFile = path.join(process.cwd(), "posts.json");
+const blogDir = path.join(process.cwd(), "docusaurus", "blog");
 
 const posts = JSON.parse(fs.readFileSync(postsFile, "utf-8"));
 
