@@ -1,7 +1,7 @@
 # Eugenio SDD Demo — Design Spec
 
 **Date:** 2026-06-29
-**Last updated:** 2026-06-30 (Next.js; site nav; per-site deploy; WP trigger plugin; SendGrid HTML notifications with Prague timezone + per-site status)
+**Last updated:** 2026-06-30 (Next.js; site nav; per-site deploy; WP trigger plugin; SendGrid HTML notifications; dynamic DNS on boot with boot email)
 **Approach:** OpenSpec Spec-Anchored
 **Status:** Approved — implemented and live
 
@@ -269,9 +269,9 @@ sdd-demo/
 | `wp_admin_password` | AWS Secrets Manager | WordPress setup |
 | `GH_DEPLOY_KEY` | GitHub Actions secret | rsync SSH to server |
 | `GH_DEPLOY_TOKEN` | Server `.env` file | WP trigger plugin → GitHub API |
-| `SENDGRID_API_KEY` | GitHub Actions secret | Deploy email notifications |
+| `SENDGRID_API_KEY` | GitHub Actions secret + Server `.env` | CI/CD deploy emails + EC2 boot email |
 
-Docker Compose reads DB credentials and `GH_DEPLOY_TOKEN` via environment at startup.
+Docker Compose reads DB credentials and `GH_DEPLOY_TOKEN` via environment at startup. `SENDGRID_API_KEY` lives in both GitHub Actions secrets (deploy pipeline) and the server's `.env` (boot notification via `update-dns.sh`).
 
 ---
 
@@ -505,7 +505,7 @@ Validates `openspec.yaml` against `openspec.schema.json`. Catches missing requir
 
 | Module | Asserts |
 |---|---|
-| `terraform.py` | region, instance_type, SG inbound ports [22,80,443], Secrets Manager resources for all `secrets.keys`, IAM role name, `route53:ChangeResourceRecordSets` in policy, `aws_iam_instance_profile` present, EC2 `iam_instance_profile` set |
+| `terraform.py` | region, instance_type, SG inbound ports [22,80,443], Secrets Manager resources for all `secrets.keys`, IAM role name, `route53:ChangeResourceRecordSets` and `route53:ListHostedZonesByName` in policy, `aws_iam_instance_profile` present, EC2 `iam_instance_profile` set |
 | `docker.py` | WordPress on port 8080, MySQL present, **no Astro/Next.js/Docusaurus service** (spec says `mode: ssg`) |
 | `nginx.py` | All upstreams have a server block; static upstreams use `root` directive; proxy upstream uses `proxy_pass :port`; SSL blocks present; shared media `location /media/` and `alias` present |
 | `cicd.py` | Webhook trigger present, fetch URL matches spec, `npm run build` step present, rsync deploy present, `openspec/validate.py` present, nextjs and docusaurus steps present |
@@ -525,31 +525,46 @@ All checks passed.
 
 ---
 
-## 16. Dynamic DNS (Route 53 on boot)
+## 16. Dynamic DNS + Boot Email (Route 53 on start)
 
-No Elastic IP is used — the EC2 public IP changes on every start. A systemd one-shot service runs `update-dns.sh` after the network is online and updates all four A records via the AWS CLI.
+No Elastic IP is used — the EC2 public IP changes on every start. A systemd one-shot service runs `update-dns.sh` after the network is online, updates all four A records via the AWS CLI, then sends a SendGrid notification email with the new IP and clickable site links.
 
 **Files (committed to repo under `server/`):**
-- `server/update-dns.sh` — fetches public IP from IMDSv2 metadata, resolves hosted zone by name, upserts A records in a single batch call
+- `server/update-dns.sh` — fetches public IP via IMDSv2, upserts all A records in one Route 53 batch call, sends HTML email via SendGrid
 - `server/update-dns.service` — systemd unit: `After=network-online.target`, `Type=oneshot`
 
 **Subdomains updated:** `wp`, `astro`, `docu`, `next` (all pointing to the same EC2 IP)  
 **TTL:** 60 seconds — propagates within a minute of instance start  
-**Auth:** EC2 IAM instance role `sdd-demo-ec2-role` with `route53_update` policy — no credentials needed on the instance
+**Auth:** EC2 IAM instance role `sdd-demo-ec2-role` with `route53_update` policy — no AWS credentials needed on the instance  
+**Email:** sources `SENDGRID_API_KEY` from `/var/www/sdd-demo/.env`; skips gracefully if key is absent
+
+**Notification email:**
+```
+Subject: EC2 started — 52.59.224.125
+
+EC2 started — DNS updated
+18:50 CEST, 30 Jun 2026
+
+New IP: 52.59.224.125
+
+Sites:
+  https://wp.4eng.online
+  https://astro.4eng.online
+  https://docu.4eng.online
+  https://next.4eng.online
+```
 
 **One-time server setup:**
 ```bash
+cd /var/www/sdd-demo && git pull
 sudo cp server/update-dns.sh /usr/local/bin/update-dns.sh
 sudo chmod +x /usr/local/bin/update-dns.sh
 sudo cp server/update-dns.service /etc/systemd/system/update-dns.service
 sudo systemctl daemon-reload
 sudo systemctl enable update-dns
-sudo systemctl start update-dns   # run immediately, verify it works
-```
-
-After that, every `sudo systemctl start` / reboot updates DNS automatically. Check logs with:
-```bash
-journalctl -u update-dns
+echo "SENDGRID_API_KEY=your_key_here" >> /var/www/sdd-demo/.env
+sudo systemctl start update-dns   # test immediately
+journalctl -u update-dns -n 30    # verify
 ```
 
 ---

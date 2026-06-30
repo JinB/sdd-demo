@@ -30,6 +30,7 @@ secrets:
     - sendgrid_api_key    # SendGrid API key for email notifications
   server_env:
     - gh_deploy_token     # GitHub PAT used by WP trigger plugin
+    - sendgrid_api_key    # SendGrid key used by update-dns.sh boot email
 
 services:
   wordpress:
