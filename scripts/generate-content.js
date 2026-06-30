@@ -11,11 +11,11 @@ fs.readdirSync(contentDir)
   .filter((f) => f.endsWith(".md"))
   .forEach((f) => fs.unlinkSync(path.join(contentDir, f)));
 
-const ALLOWED_CATEGORIES = new Set(["Sport", "Software"]);
+const ALLOWED_CATEGORIES = new Set(["Sport", "Travel", "Uncategorized"]);
 
 posts.forEach((post) => {
   const terms = post._embedded?.["wp:term"]?.[0] ?? [];
-  const catName = terms.find((t) => ALLOWED_CATEGORIES.has(t.name))?.name ?? "Software";
+  const catName = terms.find((t) => ALLOWED_CATEGORIES.has(t.name))?.name ?? "Uncategorized";
   const slug = post.slug;
   const title = post.title.rendered.replace(/"/g, '\\"');
   const rawExcerpt = post.excerpt.rendered.replace(/<[^>]+>/g, "").trim();

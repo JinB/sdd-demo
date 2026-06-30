@@ -29,7 +29,7 @@ services:
     image: wordpress:latest
     port: 8080
     domain: wp.bball.klarr.us
-    categories: [Sport, Software]
+    categories: [Sport, Travel, Uncategorized]
 
   mysql:
     image: mysql:8.0
@@ -45,7 +45,7 @@ services:
       live_clock:
         format: HH:mm:ss
         timezone: Intl
-    categories: [Sport, Software]
+    categories: [Sport, Travel, Uncategorized]
 
 routing:
   engine: nginx

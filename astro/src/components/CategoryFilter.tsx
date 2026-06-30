@@ -1,10 +1,10 @@
 import { useState } from "react";
 
-type Category = "All" | "Sport" | "Software";
+type Category = "All" | "Sport" | "Travel" | "Uncategorized";
 
 interface Post {
   title: string;
-  category: "Sport" | "Software";
+  category: "Sport" | "Travel" | "Uncategorized";
   slug: string;
   excerpt: string;
 }
@@ -22,7 +22,7 @@ export default function CategoryFilter({ posts }: Props) {
   return (
     <div>
       <nav aria-label="Category filter">
-        {(["All", "Sport", "Software"] as Category[]).map((cat) => (
+        {(["All", "Sport", "Travel", "Uncategorized"] as Category[]).map((cat) => (
           <button
             key={cat}
             onClick={() => setActive(cat)}
