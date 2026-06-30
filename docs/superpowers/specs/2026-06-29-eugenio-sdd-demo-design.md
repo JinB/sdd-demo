@@ -1,8 +1,8 @@
 # Eugenio SDD Demo — Design Spec
 
-**Date:** 2026-06-29  
-**Last updated:** 2026-06-30 (Next.js added; shared site nav bar)  
-**Approach:** OpenSpec Spec-Anchored  
+**Date:** 2026-06-29
+**Last updated:** 2026-06-30 (Next.js added; site nav bar; per-site deploy; Docusaurus title centered)
+**Approach:** OpenSpec Spec-Anchored
 **Status:** Approved — implemented and live
 
 ---
@@ -66,15 +66,21 @@ services:
       dark_light_switcher: true
       live_clock:
         format: HH:mm:ss
-        timezone: Intl    # derived from browser via Intl.DateTimeFormat
+        timezone: Intl
+      site_nav: true
     categories: [Sport, Travel, Uncategorized]
 
   docusaurus:
-    title: Eugenio Docu
+    title: Eugenio Docusaurus
     port: 3000            # dev only; prod = static files served by nginx
     domain: docu.4eng.online
     mode: ssg
     build_output: build
+    features:
+      live_clock:
+        format: HH:mm:ss
+        timezone: Intl
+      site_nav: true
 
   nextjs:
     title: Eugenio Next.js
@@ -86,7 +92,8 @@ services:
       dark_light_switcher: true
       live_clock:
         format: HH:mm:ss
-        timezone: Intl    # derived from browser via Intl.DateTimeFormat
+        timezone: Intl
+      site_nav: true
 
 routing:
   engine: nginx
@@ -110,18 +117,29 @@ routing:
 
 cicd:
   provider: github-actions
-  trigger: wordpress-webhook
-  steps:
+  triggers:
+    - wordpress-webhook
+    - manual
+  node_version: "22"
+  pipeline:
+    - validate_openspec
     - fetch_posts:
         url: "https://wp.4eng.online/wp-json/wp/v2/posts"
         params: { per_page: 100, page: 1 }
-    - build_astro:
-        replaces: ./astro/src/content/blog
-    - build_docusaurus:
-        replaces: ./docusaurus/blog
-    - deploy:
-        method: rsync-ssh
-        secret_ref: gh_deploy_key
+    - astro:
+        generate: scripts/generate-content.js
+        build_dir: ./astro
+        deploy: ubuntu@astro.4eng.online:/var/www/sdd-demo/astro/dist/
+    - nextjs:
+        generate: scripts/generate-nextjs-content.js
+        build_dir: ./nextjs
+        deploy: ubuntu@next.4eng.online:/var/www/sdd-demo/nextjs/out/
+    - docusaurus:
+        generate: scripts/generate-docusaurus-content.js
+        build_dir: ./docusaurus
+        deploy: ubuntu@docu.4eng.online:/var/www/sdd-demo/docusaurus/build/
+  deploy_method: rsync-ssh
+  secret_ref: gh_deploy_key
 ```
 
 ---
@@ -160,8 +178,9 @@ sdd-demo/
 │   └── default.conf
 │
 ├── scripts/
-│   ├── generate-content.js            ← WP posts → astro/src/content/blog/
-│   └── generate-docusaurus-content.js ← WP posts → docusaurus/blog/
+│   ├── generate-content.js             ← WP posts → astro/src/content/blog/
+│   ├── generate-docusaurus-content.js  ← WP posts → docusaurus/blog/
+│   └── generate-nextjs-content.js      ← WP posts → nextjs/src/data/posts.json
 │
 ├── .github/
 │   └── workflows/
@@ -176,16 +195,47 @@ sdd-demo/
 │   │   │   ├── CategoryFilter.tsx ← React island: All / Sport / Travel / Uncategorized
 │   │   │   ├── LiveClock.tsx      ← React island: HH:mm:ss · Continent/City
 │   │   │   ├── ThemeToggle.tsx    ← React island: dark/light switcher
-│   │   │   └── Header.astro       ← hosts LiveClock + ThemeToggle
-│   │   └── pages/index.astro
+│   │   │   ├── SiteNav.astro      ← inter-site navigation bar
+│   │   │   ├── Header.astro       ← sticky header with LiveClock + ThemeToggle
+│   │   │   └── Footer.astro       ← about text
+│   │   ├── pages/
+│   │   │   ├── index.astro
+│   │   │   └── blog/[id].astro
+│   │   └── styles/global.css
 │   ├── astro.config.mjs
 │   └── package.json
 │
-└── docusaurus/
-    ├── docusaurus.config.js       ← blog-only mode, root path /
+├── docusaurus/
+│   ├── docusaurus.config.js       ← blog-only mode, root path /
+│   ├── package.json
+│   ├── blog/                      ← replaced by CI/CD on every deploy
+│   └── src/
+│       ├── css/custom.css
+│       ├── components/
+│       │   ├── LiveClock.js
+│       │   └── SiteNav.js         ← inter-site navigation bar
+│       └── theme/
+│           ├── NavbarItem/ComponentTypes.js
+│           └── Root.js            ← injects SiteNav above all content
+│
+└── nextjs/
+    ├── next.config.ts             ← output: "export", trailingSlash: true
     ├── package.json
-    ├── blog/                      ← replaced by CI/CD on every deploy
-    └── src/css/custom.css
+    └── src/
+        ├── app/
+        │   ├── layout.tsx         ← root layout with Header + SiteNav + Footer
+        │   ├── globals.css
+        │   ├── page.tsx           ← blog listing with category filter
+        │   └── blog/[slug]/
+        │       └── page.tsx       ← post detail page
+        ├── components/
+        │   ├── Header.tsx         ← sticky header with LiveClock + ThemeToggle
+        │   ├── SiteNav.tsx        ← inter-site navigation bar
+        │   ├── Footer.tsx         ← about text
+        │   ├── LiveClock.tsx
+        │   └── ThemeToggle.tsx
+        ├── lib/posts.ts           ← reads posts.json, exports getPosts / getPost
+        └── data/posts.json        ← generated by CI/CD, git-ignored
 ```
 
 ---
@@ -207,7 +257,7 @@ sdd-demo/
 - Nginx on host (80/443) — reverse proxy + static file server
 - Docker Compose manages: WordPress (port 8080), MySQL (internal only)
 - WordPress uploads mounted to host at `/var/www/sdd-demo/media` (bind mount)
-- Astro and Docusaurus are build-only — no containers in production; built static files served directly by Nginx
+- Astro, Docusaurus, and Next.js are build-only — no containers in production; built static files served directly by Nginx
 - Let's Encrypt SSL via Certbot with auto-renewal cron
 
 **Secrets**
@@ -247,40 +297,54 @@ sdd-demo/
 - Nginx serves `/var/www/sdd-demo/docusaurus/build` as static files
 - Receives same WP posts as `docusaurus/blog/YYYY-MM-DD-slug.md` on every deploy
 
+### Next.js (Frontend)
+- Title: Eugenio Next.js
+- Mode: SSG — `output: "export"`, built to `out/`, no runtime container
+- Dev server port: 3001
+- Public URL: `https://next.4eng.online`
+- Nginx serves `/var/www/sdd-demo/nextjs/out` as static files
+- Receives WP posts as JSON in `src/data/posts.json` on every deploy
+
 ---
 
 ## 6. Shared Media
 
-WordPress uploads and Astro/Docusaurus image references share a single host path:
+WordPress uploads and all three SSG sites share a single host path:
 
 ```
-Host path:   /var/www/sdd-demo/media/
+Host path:    /var/www/sdd-demo/media/
 Docker mount: wordpress container → /var/www/html/wp-content/uploads
-Nginx alias: /media/ → /var/www/sdd-demo/media/ (on all three domains)
+Nginx alias:  /media/ → /var/www/sdd-demo/media/ (on all four domains)
 ```
 
-Images uploaded to WordPress are instantly available at `/media/filename.jpg` on `wp.4eng.online`, `astro.4eng.online`, and `docu.4eng.online`. Content generators rewrite `wp-content/uploads/` URLs to `/media/` when generating markdown files.
+Images uploaded to WordPress are instantly available at `/media/filename.jpg` on all four domains. Content generators rewrite `wp-content/uploads/` URLs (any domain) to the site's own `/media/` path.
 
 ---
 
-## 7. Astro Frontend
+## 7. Shared Site Nav Bar
 
-### SiteNav Bar
+A 2rem-high horizontal bar rendered below the main header on every page of all three SSG sites. Bar contents (same on all sites):
 
-A 2rem-high horizontal bar rendered below the main header on every page of all three SSG sites. Contains:
+```
+[Astro]  [Docusaurus]  [Next.js]  |  [WP Admin ↗]
+```
 
-- **WP Admin ↗** and **Add Post ↗** — open WordPress admin in a new tab
-- Separator
-- **Astro** · **Docusaurus** · **Next.js** — navigate between sites in the same tab; the current site is highlighted in accent colour with `pointer-events: none`
+- Site links open in the same tab; current site is rendered as a `<span>` (no link) in accent colour
+- WP Admin (`https://wp.4eng.online/wp-admin/edit.php`) opens in a new tab
+- Separator is a 1px vertical line
 
 Implementation per framework:
-- Astro: `SiteNav.astro` component injected after `<Header />` in each page template
-- Docusaurus: `src/theme/Root.js` swizzle wraps all content; `SiteNav.js` renders before `{children}`
-- Next.js: `SiteNav.tsx` component injected after `<Header />` in root `layout.tsx`
+- **Astro**: `SiteNav.astro` injected after `<Header />` in each page template
+- **Docusaurus**: `src/theme/Root.js` swizzle injects `SiteNav.js` before `{children}` (appears above Docusaurus navbar)
+- **Next.js**: `SiteNav.tsx` injected after `<Header />` in root `layout.tsx`
+
+---
+
+## 8. Astro Frontend
 
 ### CategoryFilter (React Island)
 - `client:load` hydration
-- Toggle bar: **All** | **Sport** | **Travel** | **Uncategorized**
+- Toggle bar: **All** + any WP category (dynamically derived from posts, no hardcoded list)
 - Filters displayed posts client-side, no page reload
 
 ### LiveClock (React Island)
@@ -293,71 +357,95 @@ Implementation per framework:
 
 ### ThemeToggle (React Island)
 - `client:load` hydration
-- Toggles dark/light mode, always visible regardless of page or category
-- Persists preference via `localStorage`
+- Toggles dark/light mode, persists via `localStorage`
 
 ### Header
-- Always visible
-- Contains: `LiveClock` and `ThemeToggle`, both always rendered
-- Implemented in `Header.astro` using Astro's component composition
+- Sticky, `backdrop-filter: blur(12px)`
+- Contains: `LiveClock` and `ThemeToggle`
+
+### Design System
+- CSS custom properties: zinc palette for neutrals, indigo for accent
+- Dark mode via `.dark` class on `:root`
+- Anti-FOUC: inline `<script>` in `<head>` reads `localStorage` and applies `.dark` before React hydration
 
 ---
 
-## 8. Docusaurus Frontend
+## 9. Docusaurus Frontend
 
 - Blog-only mode (`docs: false` in preset config)
 - Blog mounted at root path `/` via `routeBasePath: "/"`
 - Sidebar shows all posts (`blogSidebarCount: "ALL"`)
-- Posts have `title`, `date`, `tags` (one of: Sport, Travel, Uncategorized), `description` frontmatter
+- Posts have `title`, `date`, `tags`, `description` frontmatter; images injected as markdown `![](url)` in body
 - File naming: `YYYY-MM-DD-slug.md` (Docusaurus convention for date extraction)
+- Navbar title **"Eugenio Docusaurus"** is centered via CSS (`position: absolute; left: 50%; transform: translateX(-50%)`)
 
 ### LiveClock (Navbar Item)
 - Registered as a custom navbar item type via `src/theme/NavbarItem/ComponentTypes.js` (Docusaurus swizzle pattern)
 - Client-only: returns null until hydrated (`useEffect` sets time on mount)
-- Updates every 1 second via `setInterval`
 - Renders `HH:mm:ss · Continent/City` in the navbar, right-aligned
-- Same timezone source as Astro: `Intl.DateTimeFormat().resolvedOptions().timeZone`
 
 ---
 
-## 9. Routing (Nginx)
+## 10. Next.js Frontend
+
+- Next.js 15 SSG: `output: "export"`, `trailingSlash: true`, `images: { unoptimized: true }`
+- Posts loaded from `src/data/posts.json` (generated by CI/CD, git-ignored)
+- Dynamic post pages: `generateStaticParams()` + `async function Page({ params: Promise<{slug}> })` (Next.js 15 async params)
+
+### Dark Mode (Anti-FOUC)
+- Inline `<script>` in `<head>` reads `localStorage` and applies `.dark` class before React hydration
+- `suppressHydrationWarning` on `<html>` prevents hydration mismatch
+- `ThemeToggle.tsx` is a `"use client"` component
+
+### LiveClock
+- `"use client"` component, `setInterval` every 1 second
+- Same `Intl.DateTimeFormat` timezone source as Astro
+
+### Design System
+- Matches Astro: same CSS custom property names, same zinc/indigo palette, same dark mode via `.dark`
+
+---
+
+## 11. Routing (Nginx)
 
 ```
-wp.4eng.online    → proxy_pass to localhost:8080          (WordPress container)
-astro.4eng.online → root /var/www/sdd-demo/astro/dist     (static files, no proxy)
-docu.4eng.online  → root /var/www/sdd-demo/docusaurus/build (static files, no proxy)
+wp.4eng.online    → proxy_pass to localhost:8080            (WordPress container)
+astro.4eng.online → root /var/www/sdd-demo/astro/dist       (static files)
+docu.4eng.online  → root /var/www/sdd-demo/docusaurus/build (static files)
+next.4eng.online  → root /var/www/sdd-demo/nextjs/out       (static files)
 
-All three domains also serve:
+All four domains also serve:
   /media/ → alias /var/www/sdd-demo/media/  (shared WordPress uploads)
 ```
 
-All domains: HTTPS enforced, HTTP redirects to HTTPS, Let's Encrypt certificates.
+All domains: HTTPS enforced, HTTP redirects to HTTPS, single SAN Let's Encrypt certificate.
 
 ---
 
-## 10. CI/CD (GitHub Actions)
+## 12. CI/CD (GitHub Actions)
 
-**Trigger:** WordPress webhook on post create/update/delete → `repository_dispatch` event.
+**Triggers:**
+- WordPress webhook on post create/update/delete → `repository_dispatch: wordpress-post-change`
+- Manual via GitHub Actions UI or `gh workflow run deploy.yml` → `workflow_dispatch`
 
-**Pipeline steps:**
+**Pipeline (sequential, deploy after each build):**
+
 1. `openspec validate` — abort if spec and implementation have drifted
 2. Fetch all posts from `https://wp.4eng.online/wp-json/wp/v2/posts?per_page=100&page=1&_embed`
-3. `node scripts/generate-content.js` — writes `astro/src/content/blog/*.md`
-4. `node scripts/generate-docusaurus-content.js` — writes `docusaurus/blog/YYYY-MM-DD-*.md`
-5. `npm run build` in `./astro` → outputs to `./astro/dist`
-6. `npm run build` in `./docusaurus` → outputs to `./docusaurus/build`
-7. rsync `./astro/dist/` to `astro.4eng.online:/var/www/sdd-demo/astro/dist/`
-8. rsync `./docusaurus/build/` to `docu.4eng.online:/var/www/sdd-demo/docusaurus/build/`
+3. Setup SSH key from `GH_DEPLOY_KEY` secret
+4. **Astro**: `node scripts/generate-content.js` → `npm run build` → rsync `astro/dist/` to server
+5. **Next.js**: `node scripts/generate-nextjs-content.js` → `npm run build` → rsync `nextjs/out/` to server
+6. **Docusaurus**: `node scripts/generate-docusaurus-content.js` → `npm run build` → rsync `docusaurus/build/` to server
 
 Node version: `22` (required by Astro 7 / `>=22.12.0`).
 
 ---
 
-## 11. OpenSpec Validator
+## 13. OpenSpec Validator
 
 **Entry point:** `python openspec/validate.py`
 
-**Pass 1 — Schema validation**  
+**Pass 1 — Schema validation**
 Validates `openspec.yaml` against `openspec.schema.json`. Catches missing required fields and invalid values.
 
 **Pass 2 — Conformance checks**
@@ -365,9 +453,9 @@ Validates `openspec.yaml` against `openspec.schema.json`. Catches missing requir
 | Module | Asserts |
 |---|---|
 | `terraform.py` | region, instance_type, SG inbound ports [22,80,443], Secrets Manager resources for all `secrets.keys`, IAM role name, `route53:ChangeResourceRecordSets` in policy, `aws_iam_instance_profile` present, EC2 `iam_instance_profile` set |
-| `docker.py` | WordPress on port 8080, MySQL present, **no Astro service** (spec says `mode: ssg`) |
+| `docker.py` | WordPress on port 8080, MySQL present, **no Astro/Next.js/Docusaurus service** (spec says `mode: ssg`) |
 | `nginx.py` | All upstreams have a server block; static upstreams use `root` directive; proxy upstream uses `proxy_pass :port`; SSL blocks present; shared media `location /media/` and `alias` present |
-| `cicd.py` | Webhook trigger present, fetch URL matches spec, `npm run build` step present, rsync deploy present, `openspec/validate.py` present, `docusaurus` step present (when docusaurus service in spec) |
+| `cicd.py` | Webhook trigger present, fetch URL matches spec, `npm run build` step present, rsync deploy present, `openspec/validate.py` present, nextjs and docusaurus steps present |
 
 **Output:**
 ```
@@ -384,14 +472,16 @@ All checks passed.
 
 ---
 
-## 12. Key Constraints
+## 14. Key Constraints
 
-- Astro and Docusaurus run in SSG mode — no containers in production
-- Nginx serves both static sites' dist/build directories directly (not proxied)
+- Astro, Docusaurus, and Next.js run in SSG mode — no containers in production
+- Nginx serves all three static sites' output directories directly (not proxied)
 - `openspec validate` must pass before any deploy
 - All secrets stored in AWS Secrets Manager — no plaintext credentials in any file
 - EC2 instance has IAM role with Route 53 permissions — no AWS credentials files needed on instance
-- Shared `/media/` path means WordPress uploads are available at identical URLs on all three domains
+- Shared `/media/` path means WordPress uploads are available at identical URLs on all four domains
+- Content generators rewrite any `wp-content/uploads/<any-domain>/` URL to the site's own `/media/` path
 - t3.small is sized for demo load only
 - Node 22+ required (Astro 7 constraint)
 - Categories: Sport, Travel, Uncategorized (Uncategorized is the fallback)
+- Build and deploy order: Astro → Next.js → Docusaurus; each site is deployed immediately after its build

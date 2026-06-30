@@ -99,15 +99,26 @@ routing:
 
 cicd:
   provider: github-actions
-  trigger: wordpress-webhook
-  steps:
+  triggers:
+    - wordpress-webhook
+    - manual
+  node_version: "22"
+  pipeline:
+    - validate_openspec
     - fetch_posts:
         url: "https://wp.4eng.online/wp-json/wp/v2/posts"
         params: { per_page: 100, page: 1 }
-    - build_astro:
-        replaces: ./astro/src/content/blog
-    - build_docusaurus:
-        replaces: ./docusaurus/blog
-    - deploy:
-        method: rsync-ssh
-        secret_ref: gh_deploy_key
+    - astro:
+        generate: scripts/generate-content.js
+        build_dir: ./astro
+        deploy: ubuntu@astro.4eng.online:/var/www/sdd-demo/astro/dist/
+    - nextjs:
+        generate: scripts/generate-nextjs-content.js
+        build_dir: ./nextjs
+        deploy: ubuntu@next.4eng.online:/var/www/sdd-demo/nextjs/out/
+    - docusaurus:
+        generate: scripts/generate-docusaurus-content.js
+        build_dir: ./docusaurus
+        deploy: ubuntu@docu.4eng.online:/var/www/sdd-demo/docusaurus/build/
+  deploy_method: rsync-ssh
+  secret_ref: gh_deploy_key
