@@ -48,10 +48,11 @@ test("updates time after 1 second", async () => {
   await act(async () => {
     render(<LiveClock />);
   });
+  const initial = screen.getByRole("status").textContent;
 
   await act(async () => {
     vi.advanceTimersByTime(1000);
   });
 
-  expect(screen.getByRole("status")).toBeInTheDocument();
+  expect(screen.getByRole("status").textContent).not.toBe(initial);
 });
