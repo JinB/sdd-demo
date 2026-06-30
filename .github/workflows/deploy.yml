@@ -37,12 +37,23 @@ jobs:
         run: npm ci
         working-directory: ./astro
 
-      - name: Generate content files from posts
+      - name: Install Docusaurus dependencies
+        run: npm ci
+        working-directory: ./docusaurus
+
+      - name: Generate Astro content
         run: node scripts/generate-content.js
+
+      - name: Generate Docusaurus content
+        run: node scripts/generate-docusaurus-content.js
 
       - name: Build Astro
         run: npm run build
         working-directory: ./astro
+
+      - name: Build Docusaurus
+        run: npm run build
+        working-directory: ./docusaurus
 
       - name: Deploy via rsync
         env:
@@ -54,4 +65,8 @@ jobs:
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             ./astro/dist/ \
-            ubuntu@astro.bball.klarr.us:/var/www/sdd-demo/astro/dist/
+            ubuntu@astro.4eng.online:/var/www/sdd-demo/astro/dist/
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            ./docusaurus/build/ \
+            ubuntu@docu.4eng.online:/var/www/sdd-demo/docusaurus/build/

@@ -36,4 +36,8 @@ def check(spec: dict, base_dir: str = ".") -> list[str]:
     if "openspec/validate.py" not in combined:
         failures.append("openspec validate step not found in workflow")
 
+    if "docusaurus" in spec.get("services", {}):
+        if "docusaurus" not in combined:
+            failures.append("docusaurus build/deploy step not found in workflow")
+
     return failures

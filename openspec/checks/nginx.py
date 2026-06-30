@@ -9,29 +9,20 @@ def check(spec: dict, base_dir: str = ".") -> list[str]:
     content = conf_path.read_text()
     failures: list[str] = []
 
-    wp_domain = spec["services"]["wordpress"]["domain"]
-    wp_port = spec["services"]["wordpress"]["port"]
-    astro_domain = spec["services"]["astro"]["domain"]
-    static_path = next(
-        u["serve_static"]
-        for u in spec["routing"]["upstreams"]
-        if u["service"] == "astro"
-    )
+    for upstream in spec["routing"]["upstreams"]:
+        service = upstream["service"]
+        domain = upstream.get("domain") or spec["services"][service]["domain"]
 
-    if f"server_name {wp_domain}" not in content:
-        failures.append(f"No server block for {wp_domain}")
-    elif f"proxy_pass http://localhost:{wp_port}" not in content:
-        failures.append(
-            f"{wp_domain}: expected proxy_pass to port {wp_port}"
-        )
-
-    if f"server_name {astro_domain}" not in content:
-        failures.append(f"No server block for {astro_domain}")
-    else:
-        if f"root {static_path}" not in content:
-            failures.append(
-                f"{astro_domain}: expected 'root {static_path}'"
-            )
+        if f"server_name {domain}" not in content:
+            failures.append(f"No server block for {domain}")
+        elif "serve_static" in upstream:
+            static_path = upstream["serve_static"]
+            if f"root {static_path}" not in content:
+                failures.append(f"{domain}: expected 'root {static_path}'")
+        elif "proxy_port" in upstream:
+            port = upstream["proxy_port"]
+            if f"proxy_pass http://localhost:{port}" not in content:
+                failures.append(f"{domain}: expected proxy_pass to port {port}")
 
     if "ssl_certificate" not in content:
         failures.append("SSL certificates not configured in nginx/default.conf")
