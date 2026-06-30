@@ -57,6 +57,10 @@ services:
     domain: docu.4eng.online
     mode: ssg
     build_output: build
+    features:
+      live_clock:
+        format: HH:mm:ss
+        timezone: Intl
 
 routing:
   engine: nginx

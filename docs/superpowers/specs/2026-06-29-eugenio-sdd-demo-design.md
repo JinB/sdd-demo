@@ -283,6 +283,13 @@ Images uploaded to WordPress are instantly available at `/media/filename.jpg` on
 - Posts have `title`, `date`, `tags` (one of: Sport, Travel, Uncategorized), `description` frontmatter
 - File naming: `YYYY-MM-DD-slug.md` (Docusaurus convention for date extraction)
 
+### LiveClock (Navbar Item)
+- Registered as a custom navbar item type via `src/theme/NavbarItem/ComponentTypes.js` (Docusaurus swizzle pattern)
+- Client-only: returns null until hydrated (`useEffect` sets time on mount)
+- Updates every 1 second via `setInterval`
+- Renders `HH:mm:ss · Continent/City` in the navbar, right-aligned
+- Same timezone source as Astro: `Intl.DateTimeFormat().resolvedOptions().timeZone`
+
 ---
 
 ## 9. Routing (Nginx)

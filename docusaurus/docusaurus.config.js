@@ -33,7 +33,12 @@ const config = {
   themeConfig: {
     navbar: {
       title: "Eugenio Docu",
-      items: [],
+      items: [
+        {
+          type: "custom-LiveClock",
+          position: "right",
+        },
+      ],
     },
     footer: {
       style: "dark",
