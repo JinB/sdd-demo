@@ -46,12 +46,27 @@ jobs:
         run: npm ci
         working-directory: ./nextjs
 
+      - name: Setup SSH key
+        env:
+          DEPLOY_KEY: ${{ secrets.GH_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
       - name: Generate Astro content
         run: node scripts/generate-content.js
 
       - name: Build Astro
         run: npm run build
         working-directory: ./astro
+
+      - name: Deploy Astro
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            ./astro/dist/ \
+            ubuntu@astro.4eng.online:/var/www/sdd-demo/astro/dist/
 
       - name: Generate Next.js content
         run: node scripts/generate-nextjs-content.js
@@ -60,6 +75,13 @@ jobs:
         run: npm run build
         working-directory: ./nextjs
 
+      - name: Deploy Next.js
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            ./nextjs/out/ \
+            ubuntu@next.4eng.online:/var/www/sdd-demo/nextjs/out/
+
       - name: Generate Docusaurus content
         run: node scripts/generate-docusaurus-content.js
 
@@ -67,22 +89,9 @@ jobs:
         run: npm run build
         working-directory: ./docusaurus
 
-      - name: Deploy via rsync
-        env:
-          DEPLOY_KEY: ${{ secrets.GH_DEPLOY_KEY }}
+      - name: Deploy Docusaurus
         run: |
-          mkdir -p ~/.ssh
-          echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            ./astro/dist/ \
-            ubuntu@astro.4eng.online:/var/www/sdd-demo/astro/dist/
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             ./docusaurus/build/ \
             ubuntu@docu.4eng.online:/var/www/sdd-demo/docusaurus/build/
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            ./nextjs/out/ \
-            ubuntu@next.4eng.online:/var/www/sdd-demo/nextjs/out/
