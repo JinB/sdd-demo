@@ -35,6 +35,8 @@ tags: [${tag}]
 description: "${description}"
 ---
 
+<!-- truncate -->
+
 ${body}
 `;
 
