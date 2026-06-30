@@ -47,7 +47,8 @@ posts.forEach((post) => {
     image && `image: "${image}"`,
   ].filter(Boolean).join("\n");
 
-  const md = `---\n${fields}\n---\n\n<!-- truncate -->\n\n${body}\n`;
+  const imageMarkdown = image ? `![${title}](${image})\n\n` : "";
+  const md = `---\n${fields}\n---\n\n<!-- truncate -->\n\n${imageMarkdown}${body}\n`;
 
   fs.writeFileSync(path.join(blogDir, `${date}-${slug}.md`), md);
 });
