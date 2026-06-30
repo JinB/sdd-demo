@@ -18,10 +18,9 @@ PUBLIC_IP=$(curl -sf -H "X-aws-ec2-metadata-token: $TOKEN" \
 
 LOG "Public IP: $PUBLIC_IP"
 
-# Resolve hosted zone ID dynamically
-ZONE_ID=$(aws route53 list-hosted-zones-by-name \
-  --dns-name "${DOMAIN}." \
-  --query "HostedZones[0].Id" --output text | cut -d/ -f3)
+# Resolve hosted zone ID — uses ListHostedZones (permitted by IAM role)
+ZONE_ID=$(aws route53 list-hosted-zones \
+  --query "HostedZones[?Name=='${DOMAIN}.'].Id" --output text | cut -d/ -f3)
 
 LOG "Hosted zone: $ZONE_ID"
 
