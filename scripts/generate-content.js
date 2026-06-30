@@ -4,7 +4,7 @@ const path = require("path");
 const postsFile = path.join(process.cwd(), "posts.json");
 const contentDir = path.join(process.cwd(), "astro", "src", "content", "blog");
 
-const WP_UPLOADS_RE = /https?:\/\/wp\.4eng\.online\/wp-content\/uploads\//g;
+const WP_UPLOADS_RE = /https?:\/\/[^/]+\/wp-content\/uploads\//g;
 const MEDIA_BASE = "https://astro.4eng.online/media/";
 
 function extractImage(post) {
