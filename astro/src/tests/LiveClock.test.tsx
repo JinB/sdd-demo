@@ -5,7 +5,9 @@ import LiveClock from "../components/LiveClock";
 const MOCK_TIMEZONE = "Europe/Warsaw";
 
 beforeEach(() => {
-  vi.spyOn(window.Intl, "DateTimeFormat" as any).mockImplementation(
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-06-29T14:23:07Z"));
+  vi.spyOn(global.Intl, "DateTimeFormat" as any).mockImplementation(
     function() {
       return {
         resolvedOptions: () => ({ timeZone: MOCK_TIMEZONE }),
@@ -18,6 +20,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 test("renders time in HH:mm:ss format", async () => {
@@ -42,20 +45,13 @@ test("renders separator between time and timezone", async () => {
 });
 
 test("updates time after 1 second", async () => {
-  // Render first without fake timers
   await act(async () => {
     render(<LiveClock />);
   });
-  
-  // Then enable fake timers and test advancing them
-  vi.useFakeTimers();
-  vi.setSystemTime(new Date("2026-06-29T14:23:07Z"));
 
   await act(async () => {
     vi.advanceTimersByTime(1000);
   });
 
   expect(screen.getByRole("status")).toBeInTheDocument();
-  
-  vi.useRealTimers();
 });
