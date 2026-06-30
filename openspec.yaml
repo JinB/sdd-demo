@@ -53,7 +53,7 @@ services:
     categories: [Sport, Travel, Uncategorized]
 
   docusaurus:
-    title: Eugenio Docu
+    title: Eugenio Docusaurus
     port: 3000
     domain: docu.4eng.online
     mode: ssg

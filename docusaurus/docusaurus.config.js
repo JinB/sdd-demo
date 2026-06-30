@@ -3,7 +3,7 @@ const { themes: prismThemes } = require("prism-react-renderer");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "Eugenio Docu",
+  title: "Eugenio Docusaurus",
   tagline: "Sport, Travel & More",
   url: "https://docu.4eng.online",
   baseUrl: "/",
@@ -36,7 +36,7 @@ const config = {
   ],
   themeConfig: {
     navbar: {
-      title: "Eugenio Docu",
+      title: "Eugenio Docusaurus",
       items: [
         {
           type: "custom-LiveClock",

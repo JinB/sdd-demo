@@ -240,7 +240,7 @@ sdd-demo/
 - Receives WP posts as markdown in `src/content/blog/` on every deploy
 
 ### Docusaurus (Docs/Blog)
-- Title: Eugenio Docu
+- Title: Eugenio Docusaurus
 - Mode: SSG — blog-only config, blog at root `/`
 - Dev server port: 3000
 - Public URL: `https://docu.4eng.online`

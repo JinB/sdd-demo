@@ -1,3 +1,14 @@
+/* Center navbar title */
+.navbar__inner {
+  position: relative;
+}
+
+.navbar__brand {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 /* Site nav bar */
 .site-nav {
   background: var(--ifm-background-surface-color);
