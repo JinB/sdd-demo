@@ -4,30 +4,46 @@ import ThemeToggle from "./ThemeToggle.tsx";
 ---
 
 <header>
-  <a href="/" class="site-title">Eugenio Astro</a>
-  <div class="header-controls">
-    <LiveClock client:only="react" />
-    <ThemeToggle client:load />
+  <div class="container">
+    <a href="/" class="site-title">Eugenio Astro</a>
+    <div class="header-controls">
+      <LiveClock client:only="react" />
+      <ThemeToggle client:load />
+    </div>
   </div>
 </header>
 
 <style>
   header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  header .container {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem 2rem;
-    border-bottom: 1px solid currentColor;
+    height: 3.5rem;
   }
+
   .site-title {
-    font-weight: bold;
-    font-size: 1.25rem;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
     text-decoration: none;
-    color: inherit;
   }
+
   .header-controls {
     display: flex;
     align-items: center;
     gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
   }
 </style>

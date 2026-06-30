@@ -7,6 +7,7 @@ interface Post {
   category: "Sport" | "Travel" | "Uncategorized";
   slug: string;
   excerpt: string;
+  date?: string;
 }
 
 interface Props {
@@ -21,10 +22,11 @@ export default function CategoryFilter({ posts }: Props) {
 
   return (
     <div>
-      <nav aria-label="Category filter">
+      <nav className="filter-bar" aria-label="Category filter">
         {(["All", "Sport", "Travel", "Uncategorized"] as Category[]).map((cat) => (
           <button
             key={cat}
+            className="filter-btn"
             onClick={() => setActive(cat)}
             aria-pressed={active === cat}
           >
@@ -32,14 +34,20 @@ export default function CategoryFilter({ posts }: Props) {
           </button>
         ))}
       </nav>
-      <ul>
+
+      <div className="post-grid">
         {filtered.map((post) => (
-          <li key={post.slug}>
-            <a href={`/blog/${post.slug}`}>{post.title}</a>
-            <p>{post.excerpt}</p>
-          </li>
+          <div key={post.slug} className="post-card">
+            <div className="post-card-meta">
+              <span className={`badge badge-${post.category}`}>{post.category}</span>
+              {post.date && <time className="post-date">{post.date}</time>}
+            </div>
+            <a href={`/blog/${post.slug}`} className="post-title">{post.title}</a>
+            <p className="post-excerpt">{post.excerpt}</p>
+            <a href={`/blog/${post.slug}`} className="read-more">Read more →</a>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

@@ -5,12 +5,15 @@ import CategoryFilter from "../components/CategoryFilter.tsx";
 import "../styles/global.css";
 
 const entries = await getCollection("blog");
-const posts = entries.map((e) => ({
-  title: e.data.title,
-  category: e.data.category,
-  slug: e.id,
-  excerpt: e.data.excerpt,
-}));
+const posts = entries
+  .map((e) => ({
+    title: e.data.title,
+    category: e.data.category,
+    slug: e.id,
+    excerpt: e.data.excerpt,
+    date: e.data.date,
+  }))
+  .sort((a, b) => b.date.localeCompare(a.date));
 ---
 
 <html lang="en">
@@ -21,7 +24,11 @@ const posts = entries.map((e) => ({
   </head>
   <body>
     <Header />
-    <main>
+    <main class="container">
+      <div class="page-header">
+        <h2>Latest posts</h2>
+        <p>{posts.length} article{posts.length !== 1 ? "s" : ""}</p>
+      </div>
       <CategoryFilter posts={posts} client:load />
     </main>
   </body>

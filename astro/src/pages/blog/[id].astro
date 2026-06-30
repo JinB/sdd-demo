@@ -1,0 +1,39 @@
+---
+import { getCollection, render } from "astro:content";
+import Header from "../../components/Header.astro";
+import "../../styles/global.css";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  return posts.map((post) => ({
+    params: { id: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{post.data.title} — Eugenio Astro</title>
+    <meta name="description" content={post.data.excerpt} />
+  </head>
+  <body>
+    <Header />
+    <main class="container">
+      <a href="/" class="article-back">← All posts</a>
+      <article class="post">
+        <h1>{post.data.title}</h1>
+        <div class="post-card-meta">
+          <span class={`badge badge-${post.data.category}`}>{post.data.category}</span>
+          <time class="post-date">{post.data.date}</time>
+        </div>
+        <Content />
+      </article>
+    </main>
+  </body>
+</html>
