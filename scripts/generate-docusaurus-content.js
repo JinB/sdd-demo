@@ -12,7 +12,7 @@ fs.readdirSync(blogDir)
 
 posts.forEach((post) => {
   const termArrays = post._embedded?.["wp:term"] ?? [];
-  const tags = termArrays.flat().map((t) => t.name);
+  const tags = termArrays.slice(1).flat().map((t) => t.name);
 
   const slug = post.slug;
   const title = post.title.rendered.replace(/"/g, '\\"');

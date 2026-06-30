@@ -16,7 +16,7 @@ posts.forEach((post) => {
   const wpTags = termArrays.slice(1).flat();
 
   const catName = wpCategories[0]?.name ?? "Uncategorized";
-  const tags = [...wpCategories, ...wpTags].map((t) => t.name);
+  const tags = wpTags.map((t) => t.name);
 
   const slug = post.slug;
   const title = post.title.rendered.replace(/"/g, '\\"');
