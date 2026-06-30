@@ -8,5 +8,10 @@ __pycache__/
 node_modules/
 astro/dist/
 astro/.astro/
+astro/src/content/blog/*.md
+docusaurus/build/
+docusaurus/.docusaurus/
+docusaurus/blog/*.md
+posts.json
 .env
 .claude/
