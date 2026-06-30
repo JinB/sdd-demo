@@ -41,8 +41,8 @@ VALID_SPEC = {
     },
     "cicd": {
         "provider": "github-actions",
-        "trigger": "wordpress-webhook",
-        "steps": [{"fetch_posts": {"url": "https://wp.example.com/wp-json/wp/v2/posts", "params": {"per_page": 100, "page": 1}}}],
+        "triggers": ["wordpress-webhook", "manual"],
+        "pipeline": [{"fetch_posts": {"url": "https://wp.example.com/wp-json/wp/v2/posts", "params": {"per_page": 100, "page": 1}}}],
     },
 }
 

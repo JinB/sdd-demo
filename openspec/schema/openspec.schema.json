@@ -91,11 +91,14 @@
     },
     "cicd": {
       "type": "object",
-      "required": ["provider", "trigger", "steps"],
+      "required": ["provider", "triggers", "pipeline"],
       "properties": {
         "provider": { "type": "string", "enum": ["github-actions"] },
-        "trigger": { "type": "string" },
-        "steps": { "type": "array", "minItems": 1 }
+        "triggers": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "node_version": { "type": "string" },
+        "pipeline": { "type": "array", "minItems": 1 },
+        "deploy_method": { "type": "string" },
+        "secret_ref": { "type": "string" }
       }
     }
   }

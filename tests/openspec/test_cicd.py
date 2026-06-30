@@ -10,8 +10,8 @@ SPEC = {
         "docusaurus": {"domain": "docu.4eng.online", "mode": "ssg"},
     },
     "cicd": {
-        "trigger": "wordpress-webhook",
-        "steps": [
+        "triggers": ["wordpress-webhook", "manual"],
+        "pipeline": [
             {
                 "fetch_posts": {
                     "url": "https://wp.4eng.online/wp-json/wp/v2/posts",

@@ -23,7 +23,9 @@ def check(spec: dict, base_dir: str = ".") -> list[str]:
                 all_runs.append(step["run"])
     combined = "\n".join(all_runs)
 
-    fetch_url = spec["cicd"]["steps"][0]["fetch_posts"]["url"]
+    pipeline = spec["cicd"]["pipeline"]
+    fetch_step = next((s["fetch_posts"] for s in pipeline if isinstance(s, dict) and "fetch_posts" in s), None)
+    fetch_url = fetch_step["url"] if fetch_step else ""
     if fetch_url not in combined:
         failures.append(f"Fetch posts URL not found in workflow: {fetch_url}")
 
