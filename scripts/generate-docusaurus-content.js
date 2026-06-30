@@ -10,11 +10,10 @@ fs.readdirSync(blogDir)
   .filter((f) => f.endsWith(".md") || f.endsWith(".mdx"))
   .forEach((f) => fs.unlinkSync(path.join(blogDir, f)));
 
-const ALLOWED_CATEGORIES = new Set(["Sport", "Travel", "Uncategorized"]);
-
 posts.forEach((post) => {
-  const terms = post._embedded?.["wp:term"]?.[0] ?? [];
-  const tag = terms.find((t) => ALLOWED_CATEGORIES.has(t.name))?.name ?? "Uncategorized";
+  const termArrays = post._embedded?.["wp:term"] ?? [];
+  const tags = termArrays.flat().map((t) => t.name);
+
   const slug = post.slug;
   const title = post.title.rendered.replace(/"/g, '\\"');
   const description = post.excerpt.rendered
@@ -31,7 +30,7 @@ posts.forEach((post) => {
   const md = `---
 title: "${title}"
 date: ${date}
-tags: [${tag}]
+tags: [${tags.map((t) => JSON.stringify(t)).join(", ")}]
 description: "${description}"
 ---
 

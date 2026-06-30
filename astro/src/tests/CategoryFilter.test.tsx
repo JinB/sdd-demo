@@ -2,9 +2,9 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import CategoryFilter from "../components/CategoryFilter";
 
 const posts = [
-  { title: "Basketball finals", category: "Sport" as const, slug: "bball", excerpt: "Sport post" },
-  { title: "Travel to Tokyo", category: "Travel" as const, slug: "tokyo", excerpt: "Travel post" },
-  { title: "General update", category: "Uncategorized" as const, slug: "general", excerpt: "Misc post" },
+  { title: "Basketball finals", category: "Sport", slug: "bball", excerpt: "Sport post" },
+  { title: "Travel to Tokyo", category: "Travel", slug: "tokyo", excerpt: "Travel post" },
+  { title: "General update", category: "Uncategorized", slug: "general", excerpt: "Misc post" },
 ];
 
 test("shows all posts by default", () => {

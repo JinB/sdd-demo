@@ -1,10 +1,8 @@
 import { useState } from "react";
 
-type Category = "All" | "Sport" | "Travel" | "Uncategorized";
-
 interface Post {
   title: string;
-  category: "Sport" | "Travel" | "Uncategorized";
+  category: string;
   slug: string;
   excerpt: string;
   date?: string;
@@ -14,8 +12,18 @@ interface Props {
   posts: Post[];
 }
 
+const BADGE_CLASS: Record<string, string> = {
+  Sport: "badge-Sport",
+  Travel: "badge-Travel",
+};
+
 export default function CategoryFilter({ posts }: Props) {
-  const [active, setActive] = useState<Category>("All");
+  const [active, setActive] = useState("All");
+
+  const categories = [
+    "All",
+    ...Array.from(new Set(posts.map((p) => p.category))).sort(),
+  ];
 
   const filtered =
     active === "All" ? posts : posts.filter((p) => p.category === active);
@@ -23,7 +31,7 @@ export default function CategoryFilter({ posts }: Props) {
   return (
     <div>
       <nav className="filter-bar" aria-label="Category filter">
-        {(["All", "Sport", "Travel", "Uncategorized"] as Category[]).map((cat) => (
+        {categories.map((cat) => (
           <button
             key={cat}
             className="filter-btn"
@@ -39,7 +47,9 @@ export default function CategoryFilter({ posts }: Props) {
         {filtered.map((post) => (
           <div key={post.slug} className="post-card">
             <div className="post-card-meta">
-              <span className={`badge badge-${post.category}`}>{post.category}</span>
+              <span className={`badge ${BADGE_CLASS[post.category] ?? "badge-Uncategorized"}`}>
+                {post.category}
+              </span>
               {post.date && <time className="post-date">{post.date}</time>}
             </div>
             <a href={`/blog/${post.slug}`} className="post-title">{post.title}</a>

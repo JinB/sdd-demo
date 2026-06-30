@@ -6,16 +6,18 @@ const contentDir = path.join(process.cwd(), "astro", "src", "content", "blog");
 
 const posts = JSON.parse(fs.readFileSync(postsFile, "utf-8"));
 
-// Clear existing markdown files
 fs.readdirSync(contentDir)
   .filter((f) => f.endsWith(".md"))
   .forEach((f) => fs.unlinkSync(path.join(contentDir, f)));
 
-const ALLOWED_CATEGORIES = new Set(["Sport", "Travel", "Uncategorized"]);
-
 posts.forEach((post) => {
-  const terms = post._embedded?.["wp:term"]?.[0] ?? [];
-  const catName = terms.find((t) => ALLOWED_CATEGORIES.has(t.name))?.name ?? "Uncategorized";
+  const termArrays = post._embedded?.["wp:term"] ?? [];
+  const wpCategories = termArrays[0] ?? [];
+  const wpTags = termArrays.slice(1).flat();
+
+  const catName = wpCategories[0]?.name ?? "Uncategorized";
+  const tags = [...wpCategories, ...wpTags].map((t) => t.name);
+
   const slug = post.slug;
   const title = post.title.rendered.replace(/"/g, '\\"');
   const rawExcerpt = post.excerpt.rendered.replace(/<[^>]+>/g, "").trim();
@@ -29,6 +31,7 @@ posts.forEach((post) => {
   const md = `---
 title: "${title}"
 category: "${catName}"
+tags: [${tags.map((t) => JSON.stringify(t)).join(", ")}]
 date: "${date}"
 excerpt: "${excerpt}"
 wpId: ${post.id}
