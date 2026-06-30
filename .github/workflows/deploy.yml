@@ -42,96 +42,132 @@ jobs:
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
+      - name: Record start time
+        run: echo "START_TIME=$(TZ=Europe/Prague date '+%H:%M %Z, %d %b %Y')" >> $GITHUB_ENV
+
       # ── Astro ──────────────────────────────────────────────────────────────
-      - name: Astro — install dependencies
-        run: npm install
-        working-directory: ./astro
-
-      - name: Astro — generate content
-        run: node scripts/generate-content.js
-
-      - name: Astro — build
-        run: npm run build
-        working-directory: ./astro
-
-      - name: Astro — deploy
+      - name: Astro
+        id: astro
+        continue-on-error: true
         run: |
+          (cd astro && npm install)
+          node scripts/generate-content.js
+          (cd astro && npm run build)
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-            ubuntu@astro.4eng.online \
-            "mkdir -p /var/www/sdd-demo/astro/dist"
+            ubuntu@astro.4eng.online "mkdir -p /var/www/sdd-demo/astro/dist"
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            ./astro/dist/ \
-            ubuntu@astro.4eng.online:/var/www/sdd-demo/astro/dist/
+            ./astro/dist/ ubuntu@astro.4eng.online:/var/www/sdd-demo/astro/dist/
 
       # ── Next.js ────────────────────────────────────────────────────────────
-      - name: Next.js — install dependencies
-        run: npm install
-        working-directory: ./nextjs
-
-      - name: Next.js — generate content
-        run: node scripts/generate-nextjs-content.js
-
-      - name: Next.js — build
-        run: npm run build
-        working-directory: ./nextjs
-
-      - name: Next.js — deploy
+      - name: Next.js
+        id: nextjs
+        continue-on-error: true
         run: |
+          (cd nextjs && npm install)
+          node scripts/generate-nextjs-content.js
+          (cd nextjs && npm run build)
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-            ubuntu@next.4eng.online \
-            "mkdir -p /var/www/sdd-demo/nextjs/out"
+            ubuntu@next.4eng.online "mkdir -p /var/www/sdd-demo/nextjs/out"
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            ./nextjs/out/ \
-            ubuntu@next.4eng.online:/var/www/sdd-demo/nextjs/out/
+            ./nextjs/out/ ubuntu@next.4eng.online:/var/www/sdd-demo/nextjs/out/
 
       # ── Docusaurus ─────────────────────────────────────────────────────────
-      - name: Docusaurus — install dependencies
-        run: npm install
-        working-directory: ./docusaurus
-
-      - name: Docusaurus — generate content
-        run: node scripts/generate-docusaurus-content.js
-
-      - name: Docusaurus — build
-        run: npm run build
-        working-directory: ./docusaurus
-
-      - name: Docusaurus — deploy
+      - name: Docusaurus
+        id: docusaurus
+        continue-on-error: true
         run: |
+          (cd docusaurus && npm install)
+          node scripts/generate-docusaurus-content.js
+          (cd docusaurus && npm run build)
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-            ubuntu@docu.4eng.online \
-            "mkdir -p /var/www/sdd-demo/docusaurus/build"
+            ubuntu@docu.4eng.online "mkdir -p /var/www/sdd-demo/docusaurus/build"
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            ./docusaurus/build/ \
-            ubuntu@docu.4eng.online:/var/www/sdd-demo/docusaurus/build/
+            ./docusaurus/build/ ubuntu@docu.4eng.online:/var/www/sdd-demo/docusaurus/build/
 
       # ── Notify ─────────────────────────────────────────────────────────────
       - name: Notify
         if: always()
         env:
-          STATUS: ${{ job.status }}
-          RUN_NUMBER: ${{ github.run_number }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ASTRO_OUTCOME:  ${{ steps.astro.outcome }}
+          NEXTJS_OUTCOME: ${{ steps.nextjs.outcome }}
+          DOCU_OUTCOME:   ${{ steps.docusaurus.outcome }}
+          RUN_NUMBER:     ${{ github.run_number }}
+          RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          START_TIME:     ${{ env.START_TIME }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
         run: |
-          ICON=$([[ "$STATUS" == "success" ]] && echo "OK" || echo "FAIL")
-          echo "--- SendGrid request ---"
-          echo "API key set: $([[ -n "$SENDGRID_API_KEY" ]] && echo YES || echo NO)"
-          HTTP_STATUS=$(curl --write-out "%{http_code}" --output /tmp/sg_response.txt \
-            --request POST \
-            --url https://api.sendgrid.com/v3/mail/send \
-            --header "Authorization: Bearer $SENDGRID_API_KEY" \
-            --header "Content-Type: application/json" \
-            --data "{
-              \"personalizations\": [{\"to\": [{\"email\": \"eugenio.besson@gmail.com\"}]}],
-              \"from\": {\"email\": \"eugenio.besson@gmail.com\"},
-              \"subject\": \"[$ICON] SDD deploy #$RUN_NUMBER - $STATUS\",
-              \"content\": [{\"type\": \"text/plain\", \"value\": \"Deploy run #$RUN_NUMBER finished with status: $STATUS\n\nAstro:      https://astro.4eng.online\nNext.js:    https://next.4eng.online\nDocusaurus: https://docu.4eng.online\n\nDetails: $RUN_URL\"}]
-            }")
-          echo "--- SendGrid response ---"
-          echo "HTTP status: $HTTP_STATUS"
-          cat /tmp/sg_response.txt
-          [[ "$HTTP_STATUS" == "202" ]] || exit 1
+          python3 << 'PYEOF'
+          import json, os, urllib.request, urllib.error, datetime, zoneinfo
+
+          prague = zoneinfo.ZoneInfo("Europe/Prague")
+          finish = datetime.datetime.now(prague).strftime("%H:%M %Z, %d %b %Y")
+          start  = os.environ.get("START_TIME", "?")
+
+          def icon(outcome):
+              return "✅" if outcome == "success" else ("⏭️" if outcome == "skipped" else "❌")
+
+          def row(label, outcome, url):
+              return (
+                  f'  {icon(outcome)}  '
+                  f'<a href="{url}" style="color:#1a73e8;text-decoration:none;">'
+                  f'{label}</a>'
+                  f'  <span style="color:#888">{url}</span>'
+              )
+
+          astro  = os.environ.get("ASTRO_OUTCOME",  "skipped")
+          nextjs = os.environ.get("NEXTJS_OUTCOME", "skipped")
+          docu   = os.environ.get("DOCU_OUTCOME",   "skipped")
+
+          all_ok  = all(s == "success" for s in [astro, nextjs, docu])
+          overall = "All sites deployed" if all_ok else "Some sites failed"
+          s_icon  = "✅" if all_ok else "❌"
+
+          run_num = os.environ.get("RUN_NUMBER", "?")
+          run_url = os.environ.get("RUN_URL", "")
+
+          body_html = f"""\
+          <pre style="font-family:monospace;font-size:14px;line-height:1.6">
+          {s_icon} {overall}  —  Run #{run_num}
+
+          Started:   {start}
+          Finished:  {finish}
+
+          Sites:
+          {row("Astro",       astro,  "https://astro.4eng.online")}
+          {row("Next.js",     nextjs, "https://next.4eng.online")}
+          {row("Docusaurus",  docu,   "https://docu.4eng.online")}
+
+          Run log: <a href="{run_url}" style="color:#1a73e8">GitHub Actions #{run_num}</a>
+          </pre>
+          """
+
+          import textwrap
+          body_html = textwrap.dedent(body_html)
+
+          payload = {
+              "personalizations": [{"to": [{"email": "eugenio.besson@gmail.com"}]}],
+              "from": {"email": "eugenio.besson@gmail.com"},
+              "subject": f"{s_icon} SDD deploy #{run_num} — {overall}",
+              "content": [{"type": "text/html", "value": body_html}],
+          }
+
+          req = urllib.request.Request(
+              "https://api.sendgrid.com/v3/mail/send",
+              data=json.dumps(payload).encode(),
+              headers={
+                  "Authorization": f"Bearer {os.environ['SENDGRID_API_KEY']}",
+                  "Content-Type": "application/json",
+              },
+              method="POST",
+          )
+          try:
+              with urllib.request.urlopen(req) as r:
+                  print(f"Email sent — HTTP {r.status}")
+          except urllib.error.HTTPError as e:
+              body_err = e.read().decode()
+              print(f"SendGrid error — HTTP {e.code}: {body_err}")
+              raise
+          PYEOF

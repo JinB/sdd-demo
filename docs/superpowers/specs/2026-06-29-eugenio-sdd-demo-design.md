@@ -1,7 +1,7 @@
 # Eugenio SDD Demo — Design Spec
 
 **Date:** 2026-06-29
-**Last updated:** 2026-06-30 (Next.js; site nav; per-site deploy; WP trigger plugin; SendGrid notifications)
+**Last updated:** 2026-06-30 (Next.js; site nav; per-site deploy; WP trigger plugin; SendGrid HTML notifications with Prague timezone + per-site status)
 **Approach:** OpenSpec Spec-Anchored
 **Status:** Approved — implemented and live
 
@@ -446,7 +446,7 @@ volumes:
   - /var/www/sdd-demo/wp-plugins/sdd-deploy-trigger:/var/www/html/wp-content/plugins/sdd-deploy-trigger
 ```
 
-`GH_DEPLOY_TOKEN` is a GitHub fine-grained PAT with **Actions: Read and write** permission, passed to the container via the `GH_DEPLOY_TOKEN` env var in the server's `.env` file. The plugin reads it with `getenv('GH_DEPLOY_TOKEN')`.
+`GH_DEPLOY_TOKEN` is a GitHub fine-grained PAT with **Contents: Read and write** permission (required for `repository_dispatch`), passed to the container via the `GH_DEPLOY_TOKEN` env var in the server's `.env` file. The plugin reads it with `getenv('GH_DEPLOY_TOKEN')`.
 
 After the container is started with the mount in place, activate the plugin in WP Admin → Plugins.
 
@@ -463,12 +463,32 @@ After the container is started with the mount in place, activate the plugin in W
 1. `openspec validate` — abort if spec and implementation have drifted
 2. Fetch all posts from `https://wp.4eng.online/wp-json/wp/v2/posts?per_page=100&page=1&_embed`
 3. Setup SSH key from `GH_DEPLOY_KEY` secret
-4. **Astro**: install → generate → build → `ssh mkdir -p` → rsync `astro/dist/`
-5. **Next.js**: install → generate → build → `ssh mkdir -p` → rsync `nextjs/out/`
-6. **Docusaurus**: install → generate → build → `ssh mkdir -p` → rsync `docusaurus/build/`
-7. **Notify** (`if: always()`): SendGrid email to `eugenio.besson@gmail.com` with status, site links, and run URL
+4. Record pipeline start time (`TZ=Europe/Prague date`) → `$GITHUB_ENV`
+5. **Astro** (`id: astro`, `continue-on-error: true`): npm install → generate → build → `ssh mkdir -p` → rsync `astro/dist/`
+6. **Next.js** (`id: nextjs`, `continue-on-error: true`): npm install → generate → build → `ssh mkdir -p` → rsync `nextjs/out/`
+7. **Docusaurus** (`id: docusaurus`, `continue-on-error: true`): npm install → generate → build → `ssh mkdir -p` → rsync `docusaurus/build/`
+8. **Notify** (`if: always()`): Python script sends HTML email via SendGrid to `eugenio.besson@gmail.com`
 
-`ssh mkdir -p` ensures target directories exist before each rsync.
+Each site is a **single workflow step** (install + generate + build + deploy combined). `continue-on-error: true` means a failing site doesn't abort the others — all three always attempt to deploy. Step `id`s expose `steps.<id>.outcome` (`success` / `failure` / `skipped`) to the Notify step.
+
+**Notification email (HTML, `text/html`):**
+```
+✅ All sites deployed  —  Run #42
+
+Started:   17:30 CEST, 30 Jun 2026
+Finished:  17:47 CEST, 30 Jun 2026
+
+Sites:
+  ✅  Astro       https://astro.4eng.online    ← clickable link
+  ✅  Next.js     https://next.4eng.online     ← clickable link
+  ❌  Docusaurus  https://docu.4eng.online     ← clickable link
+
+Run log: GitHub Actions #42                   ← clickable link
+```
+
+Icons: `✅` success · `❌` failure · `⏭️` skipped (earlier step in the job failed before this site ran).
+Sent via Python `urllib.request` + SendGrid API v3. `zoneinfo.ZoneInfo("Europe/Prague")` provides CEST/CET timestamps.
+
 Node version: `22` (required by Astro 7 / `>=22.12.0`).
 
 ---
