@@ -3,6 +3,7 @@ name: Deploy on WordPress Post Change
 on:
   repository_dispatch:
     types: [wordpress-post-change]
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -48,23 +49,23 @@ jobs:
       - name: Generate Astro content
         run: node scripts/generate-content.js
 
-      - name: Generate Docusaurus content
-        run: node scripts/generate-docusaurus-content.js
-
-      - name: Generate Next.js content
-        run: node scripts/generate-nextjs-content.js
-
       - name: Build Astro
         run: npm run build
         working-directory: ./astro
 
-      - name: Build Docusaurus
-        run: npm run build
-        working-directory: ./docusaurus
+      - name: Generate Next.js content
+        run: node scripts/generate-nextjs-content.js
 
       - name: Build Next.js
         run: npm run build
         working-directory: ./nextjs
+
+      - name: Generate Docusaurus content
+        run: node scripts/generate-docusaurus-content.js
+
+      - name: Build Docusaurus
+        run: npm run build
+        working-directory: ./docusaurus
 
       - name: Deploy via rsync
         env:
