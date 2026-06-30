@@ -7,13 +7,13 @@ from openspec.checks.nginx import check
 
 SPEC = {
     "services": {
-        "wordpress": {"domain": "wp.bball.klarr.us", "port": 8080},
-        "astro": {"domain": "astro.bball.klarr.us", "mode": "ssg"},
+        "wordpress": {"domain": "wp.4eng.online", "port": 8080},
+        "astro": {"domain": "astro.4eng.online", "mode": "ssg"},
     },
     "routing": {
         "upstreams": [
-            {"service": "wordpress", "domain": "wp.bball.klarr.us", "proxy_port": 8080},
-            {"service": "astro", "domain": "astro.bball.klarr.us",
+            {"service": "wordpress", "domain": "wp.4eng.online", "proxy_port": 8080},
+            {"service": "astro", "domain": "astro.4eng.online",
              "serve_static": "/var/www/sdd-demo/astro/dist"},
         ]
     },
@@ -22,28 +22,28 @@ SPEC = {
 VALID_NGINX = """\
 server {
     listen 80;
-    server_name wp.bball.klarr.us;
+    server_name wp.4eng.online;
     return 301 https://$host$request_uri;
 }
 server {
     listen 443 ssl;
-    server_name wp.bball.klarr.us;
-    ssl_certificate /etc/letsencrypt/live/wp.bball.klarr.us/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/wp.bball.klarr.us/privkey.pem;
+    server_name wp.4eng.online;
+    ssl_certificate /etc/letsencrypt/live/wp.4eng.online/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/wp.4eng.online/privkey.pem;
     location / {
         proxy_pass http://localhost:8080;
     }
 }
 server {
     listen 80;
-    server_name astro.bball.klarr.us;
+    server_name astro.4eng.online;
     return 301 https://$host$request_uri;
 }
 server {
     listen 443 ssl;
-    server_name astro.bball.klarr.us;
-    ssl_certificate /etc/letsencrypt/live/astro.bball.klarr.us/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/astro.bball.klarr.us/privkey.pem;
+    server_name astro.4eng.online;
+    ssl_certificate /etc/letsencrypt/live/astro.4eng.online/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/astro.4eng.online/privkey.pem;
     root /var/www/sdd-demo/astro/dist;
     location / {
         try_files $uri $uri/ /index.html;
@@ -63,7 +63,7 @@ def test_wrong_wp_port_fails(tmp_path):
     conf = VALID_NGINX.replace("localhost:8080", "localhost:9090")
     (tmp_path / "nginx" / "default.conf").write_text(conf)
     failures = check(SPEC, base_dir=str(tmp_path))
-    assert any("wp.bball.klarr.us" in f or "proxy_pass" in f for f in failures)
+    assert any("wp.4eng.online" in f or "proxy_pass" in f for f in failures)
 
 
 def test_astro_proxy_pass_fails(tmp_path):

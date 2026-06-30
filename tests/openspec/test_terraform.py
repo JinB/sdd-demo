@@ -12,12 +12,16 @@ SPEC = {
         "region": "eu-central-1",
         "instance_type": "t3.small",
         "security_group": {
-            "name": "sg-spec-demo",
+            "name": "sdd-demo-sg",
             "inbound": [
                 {"port": 22, "cidr": "0.0.0.0/0"},
                 {"port": 80, "cidr": "0.0.0.0/0"},
                 {"port": 443, "cidr": "0.0.0.0/0"},
             ],
+        },
+        "iam": {
+            "ec2_role": "sdd-demo-ec2-role",
+            "policies": ["route53_update"],
         },
     },
     "secrets": {"keys": ["db_password", "wp_admin_password", "gh_deploy_key"]},
@@ -33,7 +37,7 @@ variable "instance_type" {
   default = "t3.small"
 }
 resource "aws_security_group" "sg_spec_demo" {
-  name = "sg-spec-demo"
+  name = "sdd-demo-sg"
   ingress {
     from_port   = 22
     to_port     = 22
@@ -59,8 +63,19 @@ resource "aws_security_group" "sg_spec_demo" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+resource "aws_iam_role" "ec2_role" {
+  name = "sdd-demo-ec2-role"
+}
+resource "aws_iam_role_policy" "route53_update" {
+  name   = "sdd-demo-route53-update"
+  policy = "route53:ChangeResourceRecordSets"
+}
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "sdd-demo-ec2-profile"
+}
 resource "aws_instance" "eugenio" {
-  instance_type = var.instance_type
+  instance_type        = var.instance_type
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
 }
 resource "aws_secretsmanager_secret" "db_password" {
   name = "sdd-demo/db_password"
@@ -117,3 +132,36 @@ def test_missing_sg_port_fails(tmp_path):
     (tmp_path / "terraform" / "main.tf").write_text(tf)
     failures = check(SPEC, base_dir=str(tmp_path))
     assert any("443" in f for f in failures)
+
+
+def test_missing_iam_role_fails(tmp_path):
+    (tmp_path / "terraform").mkdir()
+    tf = "\n".join(
+        l for l in VALID_TF.splitlines()
+        if "sdd-demo-ec2-role" not in l
+    )
+    (tmp_path / "terraform" / "main.tf").write_text(tf)
+    failures = check(SPEC, base_dir=str(tmp_path))
+    assert any("IAM role" in f for f in failures)
+
+
+def test_missing_route53_policy_fails(tmp_path):
+    (tmp_path / "terraform").mkdir()
+    tf = "\n".join(
+        l for l in VALID_TF.splitlines()
+        if "ChangeResourceRecordSets" not in l
+    )
+    (tmp_path / "terraform" / "main.tf").write_text(tf)
+    failures = check(SPEC, base_dir=str(tmp_path))
+    assert any("route53" in f for f in failures)
+
+
+def test_missing_instance_profile_fails(tmp_path):
+    (tmp_path / "terraform").mkdir()
+    tf = "\n".join(
+        l for l in VALID_TF.splitlines()
+        if "aws_iam_instance_profile" not in l and "iam_instance_profile" not in l
+    )
+    (tmp_path / "terraform" / "main.tf").write_text(tf)
+    failures = check(SPEC, base_dir=str(tmp_path))
+    assert any("instance profile" in f for f in failures)

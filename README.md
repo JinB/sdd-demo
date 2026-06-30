@@ -42,8 +42,8 @@ npm run build  # outputs to astro/dist
 
 | Domain | Service |
 |--------|---------|
-| `wp.bball.klarr.us` | WordPress (proxied from port 8080) |
-| `astro.bball.klarr.us` | Astro static site |
+| `wp.4eng.online` | WordPress (proxied from port 8080) |
+| `astro.4eng.online` | Astro static site |
 
 ## Secrets
 

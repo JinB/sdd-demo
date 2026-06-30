@@ -22,7 +22,7 @@ posts.forEach((post) => {
   const excerpt = rawExcerpt.slice(0, 200).replace(/"/g, '\\"');
   const date = post.date.split("T")[0];
   const body = post.content.rendered
-    .replace(/https?:\/\/wp\.bball\.klarr\.us\/wp-content\/uploads\//g, "/media/")
+    .replace(/https?:\/\/wp\.4eng\.online\/wp-content\/uploads\//g, "/media/")
     .replace(/<[^>]+>/g, "")
     .trim();
 

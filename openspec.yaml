@@ -15,6 +15,10 @@ infrastructure:
       - { port: 443, cidr: 0.0.0.0/0 }
     outbound:
       - { port: all, cidr: 0.0.0.0/0 }
+  iam:
+    ec2_role: sdd-demo-ec2-role
+    policies:
+      - route53_update
 
 secrets:
   store: aws-secrets-manager
@@ -28,7 +32,7 @@ services:
     title: Eugenio WP
     image: wordpress:latest
     port: 8080
-    domain: wp.bball.klarr.us
+    domain: wp.4eng.online
     categories: [Sport, Travel, Uncategorized]
 
   mysql:
@@ -38,7 +42,7 @@ services:
   astro:
     title: Eugenio Astro
     port: 4321
-    domain: astro.bball.klarr.us
+    domain: astro.4eng.online
     mode: ssg
     features:
       dark_light_switcher: true
@@ -55,10 +59,10 @@ routing:
     url_path: /media
   upstreams:
     - service: wordpress
-      domain: wp.bball.klarr.us
+      domain: wp.4eng.online
       proxy_port: 8080
     - service: astro
-      domain: astro.bball.klarr.us
+      domain: astro.4eng.online
       serve_static: /var/www/sdd-demo/astro/dist
 
 cicd:
@@ -66,7 +70,7 @@ cicd:
   trigger: wordpress-webhook
   steps:
     - fetch_posts:
-        url: "https://wp.bball.klarr.us/wp-json/wp/v2/posts"
+        url: "https://wp.4eng.online/wp-json/wp/v2/posts"
         params: { per_page: 100, page: 1 }
     - build_astro:
         replaces: ./astro/src/content/blog
