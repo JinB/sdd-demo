@@ -34,18 +34,6 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Install Astro dependencies
-        run: npm install
-        working-directory: ./astro
-
-      - name: Install Docusaurus dependencies
-        run: npm install
-        working-directory: ./docusaurus
-
-      - name: Install Next.js dependencies
-        run: npm install
-        working-directory: ./nextjs
-
       - name: Setup SSH key
         env:
           DEPLOY_KEY: ${{ secrets.GH_DEPLOY_KEY }}
@@ -54,43 +42,67 @@ jobs:
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
-      - name: Generate Astro content
+      # ── Astro ──────────────────────────────────────────────────────────────
+      - name: Astro — install dependencies
+        run: npm install
+        working-directory: ./astro
+
+      - name: Astro — generate content
         run: node scripts/generate-content.js
 
-      - name: Build Astro
+      - name: Astro — build
         run: npm run build
         working-directory: ./astro
 
-      - name: Deploy Astro
+      - name: Astro — deploy
         run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ubuntu@astro.4eng.online \
+            "mkdir -p /var/www/sdd-demo/astro/dist"
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             ./astro/dist/ \
             ubuntu@astro.4eng.online:/var/www/sdd-demo/astro/dist/
 
-      - name: Generate Next.js content
+      # ── Next.js ────────────────────────────────────────────────────────────
+      - name: Next.js — install dependencies
+        run: npm install
+        working-directory: ./nextjs
+
+      - name: Next.js — generate content
         run: node scripts/generate-nextjs-content.js
 
-      - name: Build Next.js
+      - name: Next.js — build
         run: npm run build
         working-directory: ./nextjs
 
-      - name: Deploy Next.js
+      - name: Next.js — deploy
         run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ubuntu@next.4eng.online \
+            "mkdir -p /var/www/sdd-demo/nextjs/out"
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             ./nextjs/out/ \
             ubuntu@next.4eng.online:/var/www/sdd-demo/nextjs/out/
 
-      - name: Generate Docusaurus content
+      # ── Docusaurus ─────────────────────────────────────────────────────────
+      - name: Docusaurus — install dependencies
+        run: npm install
+        working-directory: ./docusaurus
+
+      - name: Docusaurus — generate content
         run: node scripts/generate-docusaurus-content.js
 
-      - name: Build Docusaurus
+      - name: Docusaurus — build
         run: npm run build
         working-directory: ./docusaurus
 
-      - name: Deploy Docusaurus
+      - name: Docusaurus — deploy
         run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ubuntu@docu.4eng.online \
+            "mkdir -p /var/www/sdd-demo/docusaurus/build"
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             ./docusaurus/build/ \
