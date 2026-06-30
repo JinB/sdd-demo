@@ -111,20 +111,20 @@ jobs:
       # ── Notify ─────────────────────────────────────────────────────────────
       - name: Notify
         if: always()
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 587
-          username: ${{ secrets.GMAIL_USERNAME }}
-          password: ${{ secrets.GMAIL_APP_PASSWORD }}
-          subject: "${{ job.status == 'success' && '✅' || '❌' }} SDD deploy #${{ github.run_number }} — ${{ job.status }}"
-          to: eugenio.besson@gmail.com
-          from: ${{ secrets.GMAIL_USERNAME }}
-          body: |
-            Deploy run #${{ github.run_number }} finished with status: ${{ job.status }}
-
-            Astro:      https://astro.4eng.online
-            Next.js:    https://next.4eng.online
-            Docusaurus: https://docu.4eng.online
-
-            Details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        env:
+          STATUS: ${{ job.status }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+        run: |
+          ICON=$([[ "$STATUS" == "success" ]] && echo "✅" || echo "❌")
+          curl -s --fail --request POST \
+            --url https://api.sendgrid.com/v3/mail/send \
+            --header "Authorization: Bearer $SENDGRID_API_KEY" \
+            --header "Content-Type: application/json" \
+            --data "{
+              \"personalizations\": [{\"to\": [{\"email\": \"eugenio.besson@gmail.com\"}]}],
+              \"from\": {\"email\": \"eugenio.besson@gmail.com\"},
+              \"subject\": \"$ICON SDD deploy #$RUN_NUMBER — $STATUS\",
+              \"content\": [{\"type\": \"text/plain\", \"value\": \"Deploy run #$RUN_NUMBER finished with status: $STATUS\n\nAstro:      https://astro.4eng.online\nNext.js:    https://next.4eng.online\nDocusaurus: https://docu.4eng.online\n\nDetails: $RUN_URL\"}]
+            }"
