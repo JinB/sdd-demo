@@ -62,6 +62,18 @@ services:
         format: HH:mm:ss
         timezone: Intl
 
+  nextjs:
+    title: Eugenio Next.js
+    port: 3001
+    domain: next.4eng.online
+    mode: ssg
+    build_output: out
+    features:
+      dark_light_switcher: true
+      live_clock:
+        format: HH:mm:ss
+        timezone: Intl
+
 routing:
   engine: nginx
   ssl: letsencrypt
@@ -78,6 +90,9 @@ routing:
     - service: docusaurus
       domain: docu.4eng.online
       serve_static: /var/www/sdd-demo/docusaurus/build
+    - service: nextjs
+      domain: next.4eng.online
+      serve_static: /var/www/sdd-demo/nextjs/out
 
 cicd:
   provider: github-actions

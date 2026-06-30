@@ -1,7 +1,7 @@
 # Eugenio SDD Demo — Design Spec
 
 **Date:** 2026-06-29  
-**Last updated:** 2026-06-30  
+**Last updated:** 2026-06-30 (Next.js added)  
 **Approach:** OpenSpec Spec-Anchored  
 **Status:** Approved — implemented and live
 
@@ -9,7 +9,7 @@
 
 ## 1. Overview
 
-A WordPress/Astro/Docusaurus demo managed by OpenSpec using a Spec-Anchored development flow. A single `openspec.yaml` is the source of truth; all implementation files (Terraform, Docker Compose, Nginx, GitHub Actions) must conform to it. A validator CLI enforces conformance locally and as a CI gate.
+A WordPress/Astro/Docusaurus/Next.js demo managed by OpenSpec using a Spec-Anchored development flow. A single `openspec.yaml` is the source of truth; all implementation files (Terraform, Docker Compose, Nginx, GitHub Actions) must conform to it. A validator CLI enforces conformance locally and as a CI gate.
 
 ---
 
@@ -76,6 +76,18 @@ services:
     mode: ssg
     build_output: build
 
+  nextjs:
+    title: Eugenio Next.js
+    port: 3001            # dev only; prod = static files served by nginx
+    domain: next.4eng.online
+    mode: ssg
+    build_output: out
+    features:
+      dark_light_switcher: true
+      live_clock:
+        format: HH:mm:ss
+        timezone: Intl    # derived from browser via Intl.DateTimeFormat
+
 routing:
   engine: nginx
   ssl: letsencrypt
@@ -92,6 +104,9 @@ routing:
     - service: docusaurus
       domain: docu.4eng.online
       serve_static: /var/www/sdd-demo/docusaurus/build
+    - service: nextjs
+      domain: next.4eng.online
+      serve_static: /var/www/sdd-demo/nextjs/out
 
 cicd:
   provider: github-actions

@@ -8,9 +8,10 @@ A spec-anchored WordPress/Astro/Docusaurus demo on a single AWS EC2 instance. `o
 - **MySQL** — database, Docker container (internal network only)
 - **Astro** — static frontend (SSG), served by nginx from `astro/dist`
 - **Docusaurus** — static blog (SSG), served by nginx from `docusaurus/build`
+- **Next.js** — static frontend (SSG), served by nginx from `nextjs/out`
 - **Nginx** — reverse proxy + static file server, Let's Encrypt SSL
 - **Terraform** — provisions EC2 (`t3.small`, `eu-central-1`), security group, IAM role with Route 53 permissions, Secrets Manager secrets
-- **GitHub Actions** — triggered by WordPress webhook; fetches posts, builds Astro + Docusaurus, deploys both via rsync
+- **GitHub Actions** — triggered by WordPress webhook; fetches posts, builds Astro + Docusaurus + Next.js, deploys all via rsync
 
 ## OpenSpec Validator
 
@@ -39,6 +40,23 @@ npm test       # 27 tests
 npm run build  # outputs to astro/dist
 ```
 
+## Next.js Frontend
+
+Same WordPress posts published as a Next.js static site.
+
+Features:
+- Category filter (client component, `"use client"`)
+- Live clock with browser timezone (`HH:mm:ss · Continent/City`) in the navbar
+- Dark/light mode toggle with localStorage persistence (flash-free via inline script)
+- Featured image hero on post pages
+
+```bash
+cd nextjs
+npm install
+npm run build  # outputs to nextjs/out
+npm run dev    # dev server at http://localhost:3001
+```
+
 ## Docusaurus Frontend
 
 Same WordPress posts published as a Docusaurus blog.
@@ -62,6 +80,7 @@ npm start      # dev server at http://localhost:3000
 | `wp.4eng.online` | WordPress (proxied from port 8080) |
 | `astro.4eng.online` | Astro static site |
 | `docu.4eng.online` | Docusaurus static blog |
+| `next.4eng.online` | Next.js static site |
 
 All three domains share a `/media/` path for WordPress uploads.
 

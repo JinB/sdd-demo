@@ -12,6 +12,9 @@ astro/src/content/blog/*.md
 docusaurus/build/
 docusaurus/.docusaurus/
 docusaurus/blog/*.md
+nextjs/.next/
+nextjs/out/
+nextjs/src/data/posts.json
 posts.json
 .env
 .claude/

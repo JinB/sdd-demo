@@ -40,4 +40,8 @@ def check(spec: dict, base_dir: str = ".") -> list[str]:
         if "docusaurus" not in combined:
             failures.append("docusaurus build/deploy step not found in workflow")
 
+    if "nextjs" in spec.get("services", {}):
+        if "nextjs" not in combined:
+            failures.append("nextjs build/deploy step not found in workflow")
+
     return failures

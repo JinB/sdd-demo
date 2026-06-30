@@ -41,11 +41,18 @@ jobs:
         run: npm ci
         working-directory: ./docusaurus
 
+      - name: Install Next.js dependencies
+        run: npm ci
+        working-directory: ./nextjs
+
       - name: Generate Astro content
         run: node scripts/generate-content.js
 
       - name: Generate Docusaurus content
         run: node scripts/generate-docusaurus-content.js
+
+      - name: Generate Next.js content
+        run: node scripts/generate-nextjs-content.js
 
       - name: Build Astro
         run: npm run build
@@ -54,6 +61,10 @@ jobs:
       - name: Build Docusaurus
         run: npm run build
         working-directory: ./docusaurus
+
+      - name: Build Next.js
+        run: npm run build
+        working-directory: ./nextjs
 
       - name: Deploy via rsync
         env:
@@ -70,3 +81,7 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             ./docusaurus/build/ \
             ubuntu@docu.4eng.online:/var/www/sdd-demo/docusaurus/build/
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            ./nextjs/out/ \
+            ubuntu@next.4eng.online:/var/www/sdd-demo/nextjs/out/
