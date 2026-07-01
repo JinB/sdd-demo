@@ -1,6 +1,6 @@
 # Spec Driven Development (OpenSpec) Demo
 
-# Spec-Anchored WordPress/Astro/Docusaurus/Next.js
+## Spec-Anchored WordPress/Astro/Docusaurus/Next.js
 
 A single AWS EC2 instance running four web properties from one codebase.
 `openspec.yaml` is the single source of truth — every infrastructure file
