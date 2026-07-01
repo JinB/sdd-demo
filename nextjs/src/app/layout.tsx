@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { Geist } from "next/font/google";
 import Header from "@/components/Header";
 import SiteNav from "@/components/SiteNav";
 import Footer from "@/components/Footer";
 import "./globals.css";
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 
 export const metadata: Metadata = {
   title: "Eugenio Next.js",
@@ -11,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={geist.variable}>
       <head>
         {/* Apply saved theme before first paint to avoid flash */}
         <script
