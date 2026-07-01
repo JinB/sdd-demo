@@ -77,7 +77,7 @@ body_html = (
 
 payload = {
     "personalizations": [{"to": [{"email": "eugenio.besson@gmail.com"}]}],
-    "from": {"email": "noreply@4eng.online"},
+    "from": {"email": "noreply@4eng.online", "name": "4eng"},
     "subject": f"EC2 started — {ip}",
     "content": [{"type": "text/html", "value": body_html}],
 }
