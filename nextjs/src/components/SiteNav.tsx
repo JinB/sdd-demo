@@ -7,6 +7,7 @@ export default function SiteNav() {
         <span className="site-nav-link active">Next.js</span>
         <span className="site-nav-sep" />
         <a href="https://wp.4eng.online/wp-admin/edit.php" target="_blank" rel="noopener" className="site-nav-link">WP Admin ↗</a>
+        <a href="https://github.com/JinB/sdd-demo" target="_blank" rel="noopener" className="site-nav-link">GitHub ↗</a>
       </div>
     </nav>
   );
