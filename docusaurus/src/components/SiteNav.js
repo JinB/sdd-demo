@@ -4,7 +4,7 @@ export default function SiteNav() {
       <div className="site-nav-inner">
         <a href="/about" className="site-nav-link">About</a>
         <a href="https://astro.4eng.online" className="site-nav-link">Astro</a>
-        <a href="/" className="site-nav-link active">Doc</a>
+        <a href="/" className="site-nav-link active">Docu</a>
         <a href="https://next.4eng.online" className="site-nav-link">Next.js</a>
         <a href="https://wp.4eng.online" className="site-nav-link">WP</a>
         <span className="site-nav-sep" />

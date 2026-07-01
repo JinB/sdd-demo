@@ -10,11 +10,14 @@
 }
 
 @media (max-width: 480px) {
+  .navbar__brand {
+    position: static;
+    transform: none;
+    left: auto;
+  }
   .navbar__title {
     white-space: normal;
     word-break: break-word;
-    text-align: center;
-    max-width: 5.5rem;
     line-height: 1.3;
   }
 }
