@@ -1,0 +1,82 @@
+---
+import Header from "../components/Header.astro";
+import SiteNav from "../components/SiteNav.astro";
+import Footer from "../components/Footer.astro";
+import "../styles/global.css";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>About — Eugenio Astro</title>
+  </head>
+  <body>
+    <Header />
+    <SiteNav />
+    <main class="container">
+      <article class="about-page">
+        <h1>About</h1>
+        <p class="about-teaser">Eugenio is a highly skilled software engineer known for his intelligence, creativity, and passion for innovation.</p>
+
+        <section class="about-section">
+          <h2>Eugenio's recent backend GitLab commits:</h2>
+          <p class="about-tech">Java, Go, Liquibase, Terraform</p>
+          <img src="https://astro.4eng.online/media/2026/06/gitlab-BE-1.png" alt="Backend GitLab commits" class="about-img" />
+        </section>
+
+        <section class="about-section">
+          <h2>Eugenio's recent frontend GitLab commits:</h2>
+          <p class="about-tech">React, MobX, MUI, Axios</p>
+          <img src="https://astro.4eng.online/media/2026/06/gitlab-FE-1.png" alt="Frontend GitLab commits" class="about-img" />
+        </section>
+      </article>
+    </main>
+    <Footer />
+  </body>
+</html>
+
+<style>
+  .about-page {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 2.5rem 0 4rem;
+  }
+
+  .about-page h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin: 0 0 1rem;
+  }
+
+  .about-teaser {
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin: 0 0 2.5rem;
+  }
+
+  .about-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .about-section h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 0.35rem;
+  }
+
+  .about-tech {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0 0 1rem;
+  }
+
+  .about-img {
+    width: 100%;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    display: block;
+  }
+</style>

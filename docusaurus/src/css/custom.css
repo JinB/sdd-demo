@@ -46,6 +46,48 @@
   vertical-align: middle;
 }
 
+/* ── About page ── */
+.about-page {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.about-page h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+}
+
+.about-teaser {
+  font-size: 1.05rem;
+  color: var(--ifm-color-secondary-darkest);
+  line-height: 1.7;
+  margin: 0 0 2.5rem;
+}
+
+.about-section {
+  margin-bottom: 2.5rem;
+}
+
+.about-section h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+
+.about-tech {
+  font-size: 0.9rem;
+  color: var(--ifm-color-secondary-darkest);
+  margin: 0 0 1rem;
+}
+
+.about-img {
+  width: 100%;
+  border-radius: var(--ifm-global-radius);
+  border: 1px solid var(--ifm-toc-border-color);
+  display: block;
+}
+
 :root {
   --ifm-color-primary: #2e8555;
   --ifm-color-primary-dark: #29784c;
