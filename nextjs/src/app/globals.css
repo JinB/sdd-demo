@@ -114,7 +114,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .site-nav-link:hover { color: var(--accent); }
-.site-nav-link.active { color: var(--accent); font-weight: 700; pointer-events: none; }
+.site-nav-link.active { color: var(--accent); font-weight: 700; }
 
 .site-nav-sep {
   display: inline-block;

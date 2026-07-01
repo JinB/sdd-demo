@@ -45,7 +45,7 @@
 }
 
 .site-nav-link:hover { color: var(--ifm-color-primary); }
-.site-nav-link.active { color: var(--ifm-color-primary); font-weight: 700; pointer-events: none; }
+.site-nav-link.active { color: var(--ifm-color-primary); font-weight: 700; }
 
 .site-nav-sep {
   display: inline-block;
