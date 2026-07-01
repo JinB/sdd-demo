@@ -149,7 +149,7 @@ jobs:
 
           payload = {
               "personalizations": [{"to": [{"email": "eugenio.besson@gmail.com"}]}],
-              "from": {"email": "eugenio.besson@gmail.com"},
+              "from": {"email": "noreply@4eng.online"},
               "subject": f"{s_icon} SDD deploy #{run_num} — {overall}",
               "content": [{"type": "text/html", "value": body_html}],
           }
