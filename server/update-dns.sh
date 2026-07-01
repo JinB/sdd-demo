@@ -67,7 +67,7 @@ def link(sub):
 
 body_html = (
     '<pre style="font-family:monospace;font-size:14px;line-height:1.8">\n'
-    f'EC2 started — DNS updated\n'
+    f'DNS updated\n'
     f'{now}\n\n'
     f'New IP: <b>{ip}</b>\n\n'
     'Sites:\n'
@@ -78,7 +78,7 @@ body_html = (
 payload = {
     "personalizations": [{"to": [{"email": "eugenio.besson@gmail.com"}]}],
     "from": {"email": "noreply@4eng.online", "name": "4eng"},
-    "subject": f"EC2 started — {ip}",
+    "subject": f"EC2 started: {ip}",
     "content": [{"type": "text/html", "value": body_html}],
 }
 

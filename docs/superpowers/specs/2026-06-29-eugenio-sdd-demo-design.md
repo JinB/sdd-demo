@@ -1,7 +1,7 @@
 # Eugenio SDD Demo — Design Spec
 
 **Date:** 2026-06-29
-**Last updated:** 2026-06-30 (Next.js; site nav; per-site deploy; WP trigger plugin; SendGrid HTML notifications; dynamic DNS on boot with boot email)
+**Last updated:** 2026-07-01 (Next.js; site nav; per-site deploy; WP trigger plugin; SendGrid HTML notifications; dynamic DNS on boot with boot email; About page; SiteNav rework; DMARC email authentication)
 **Approach:** OpenSpec Spec-Anchored
 **Status:** Approved — implemented and live
 
@@ -536,13 +536,15 @@ No Elastic IP is used — the EC2 public IP changes on every start. A systemd on
 **Subdomains updated:** `wp`, `astro`, `docu`, `next` (all pointing to the same EC2 IP)  
 **TTL:** 60 seconds — propagates within a minute of instance start  
 **Auth:** EC2 IAM instance role `sdd-demo-ec2-role` with `route53_update` policy — no AWS credentials needed on the instance  
-**Email:** sources `SENDGRID_API_KEY` from `/var/www/sdd-demo/.env`; skips gracefully if key is absent
+**Email:** sources `SENDGRID_API_KEY` from `/var/www/sdd-demo/.env`; skips gracefully if key is absent  
+**Sender:** `4eng <noreply@4eng.online>` — authenticated via SendGrid domain authentication (DKIM + SPF for `4eng.online`)
 
 **Notification email:**
 ```
-Subject: EC2 started — 52.59.224.125
+From:    4eng <noreply@4eng.online>
+Subject: EC2 started: 52.59.224.125
 
-EC2 started — DNS updated
+DNS updated
 18:50 CEST, 30 Jun 2026
 
 New IP: 52.59.224.125
@@ -566,6 +568,26 @@ echo "SENDGRID_API_KEY=your_key_here" >> /var/www/sdd-demo/.env
 sudo systemctl start update-dns   # test immediately
 journalctl -u update-dns -n 30    # verify
 ```
+
+---
+
+## 17. Email Authentication (DMARC / SPF / DKIM)
+
+All outgoing SendGrid emails use `From: 4eng <noreply@4eng.online>`. Sending from a Gmail address through SendGrid caused DMARC failures and spam classification.
+
+**DNS records on `4eng.online` (Route 53):**
+
+| Name | Type | Value |
+|------|------|-------|
+| `4eng.online` | TXT | `"v=spf1 include:sendgrid.net ~all"` |
+| `_dmarc.4eng.online` | TXT | `"v=DMARC1; p=none; rua=mailto:eugenio.besson@gmail.com"` |
+| `em3768.4eng.online` | CNAME | `u110072772.wl023.sendgrid.net` |
+| `s1._domainkey.4eng.online` | CNAME | `s1.domainkey.u110072772.wl023.sendgrid.net` |
+| `s2._domainkey.4eng.online` | CNAME | `s2.domainkey.u110072772.wl023.sendgrid.net` |
+
+**SendGrid:** domain `4eng.online` authenticated and verified under Settings → Sender Authentication.
+
+**Result:** DKIM passes for `4eng.online`, SPF passes, DMARC alignment passes → inbox delivery.
 
 ---
 

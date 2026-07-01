@@ -1,4 +1,6 @@
-# SDD Demo — Spec-Anchored WordPress/Astro/Docusaurus/Next.js
+# Spec Driven Development (OpenSpec) Demo
+
+# Spec-Anchored WordPress/Astro/Docusaurus/Next.js
 
 A single AWS EC2 instance running four web properties from one codebase.
 `openspec.yaml` is the single source of truth — every infrastructure file
@@ -7,12 +9,12 @@ before each deploy.
 
 **Live sites:**
 
-| Site | URL | Framework |
-|------|-----|-----------|
-| Blog (Astro) | https://astro.4eng.online | Astro 7 SSG |
-| Blog (Docusaurus) | https://docu.4eng.online | Docusaurus 3 SSG |
-| Blog (Next.js) | https://next.4eng.online | Next.js 15 SSG |
-| CMS | https://wp.4eng.online | WordPress (Docker) |
+| Site              | URL                       | Framework          |
+| ----------------- | ------------------------- | ------------------ |
+| Blog (Astro)      | https://astro.4eng.online | Astro 7 SSG        |
+| Blog (Docusaurus) | https://docu.4eng.online  | Docusaurus 3 SSG   |
+| Blog (Next.js)    | https://next.4eng.online  | Next.js 15 SSG     |
+| CMS               | https://wp.4eng.online    | WordPress (Docker) |
 
 ---
 
@@ -29,15 +31,15 @@ All three SSG sites show the same WordPress content rendered with different fram
 
 ## Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Content backend | WordPress + MySQL (Docker Compose) |
-| Static sites | Astro 7 · Docusaurus 3.7 · Next.js 15 (all SSG) |
+| Layer               | Technology                                            |
+| ------------------- | ----------------------------------------------------- |
+| Content backend     | WordPress + MySQL (Docker Compose)                    |
+| Static sites        | Astro 7 · Docusaurus 3.7 · Next.js 15 (all SSG)       |
 | Reverse proxy / SSL | Nginx + Let's Encrypt (SAN cert, one for all domains) |
-| Infrastructure | Terraform → AWS EC2 `t3.small` `eu-central-1` |
-| Secrets | AWS Secrets Manager · GitHub Actions secrets |
-| CI/CD | GitHub Actions — webhook-triggered or manual |
-| Email alerts | SendGrid API |
+| Infrastructure      | Terraform → AWS EC2 `t3.small` `eu-central-1`         |
+| Secrets             | AWS Secrets Manager · GitHub Actions secrets          |
+| CI/CD               | GitHub Actions — webhook-triggered or manual          |
+| Email alerts        | SendGrid API                                          |
 
 ---
 
@@ -101,10 +103,10 @@ node scripts/generate-docusaurus-content.js
 
 ## Secrets
 
-| Secret | Where stored | Used by |
-|--------|-------------|---------|
-| `db_password` | AWS Secrets Manager | Docker Compose / MySQL |
-| `wp_admin_password` | AWS Secrets Manager | WordPress setup |
-| `GH_DEPLOY_KEY` | GitHub Actions secret | rsync SSH to server |
-| `GH_DEPLOY_TOKEN` | Server `.env` file | WP plugin → GitHub API |
-| `SENDGRID_API_KEY` | GitHub Actions secret | Deploy email notifications |
+| Secret              | Where stored          | Used by                    |
+| ------------------- | --------------------- | -------------------------- |
+| `db_password`       | AWS Secrets Manager   | Docker Compose / MySQL     |
+| `wp_admin_password` | AWS Secrets Manager   | WordPress setup            |
+| `GH_DEPLOY_KEY`     | GitHub Actions secret | rsync SSH to server        |
+| `GH_DEPLOY_TOKEN`   | Server `.env` file    | WP plugin → GitHub API     |
+| `SENDGRID_API_KEY`  | GitHub Actions secret | Deploy email notifications |
