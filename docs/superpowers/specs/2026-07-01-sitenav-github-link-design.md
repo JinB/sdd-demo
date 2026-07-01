@@ -1,7 +1,7 @@
 # SiteNav GitHub Link — Design Spec
 
 **Date:** 2026-07-01
-**Status:** Approved
+**Status:** Superseded by `2026-07-01-sitenav-about-page-design.md` — full SiteNav is documented there
 
 ## Overview
 

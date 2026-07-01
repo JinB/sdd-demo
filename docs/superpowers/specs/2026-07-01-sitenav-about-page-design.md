@@ -7,20 +7,20 @@
 
 **New bar:**
 ```
-[About] [Astro] [Doc] [Next.js] [WP] | [Admin ↗] [GitHub ↗]
+[About] [Astro] [Docu] [Next.js] [WP] | [Admin ↗] [GitHub ↗]
 ```
 
 | Link | URL | Behaviour |
 |------|-----|-----------|
 | About | `/about` | same tab, relative |
 | Astro | `https://astro.4eng.online` | same tab |
-| Doc | `https://docu.4eng.online` | same tab |
+| Docu | `https://docu.4eng.online` | same tab |
 | Next.js | `https://next.4eng.online` | same tab |
 | WP | `https://wp.4eng.online` | same tab (public site) |
 | Admin ↗ | `https://wp.4eng.online/wp-admin/edit.php` | new tab |
 | GitHub ↗ | `https://github.com/JinB/sdd-demo` | new tab |
 
-Current site is rendered as `<span class="site-nav-link active">` (no link). "About" is always a link.
+Current site rendered as `<a href="/" class="site-nav-link active">` — clickable link to `/` so users can navigate home from any sub-page (e.g. About).
 
 ## 2. About Page (all 3 SSG sites)
 

@@ -1,7 +1,7 @@
 # Eugenio SDD Demo — Design Spec
 
 **Date:** 2026-06-29
-**Last updated:** 2026-07-01 (Next.js; site nav; per-site deploy; WP trigger plugin; SendGrid HTML notifications; dynamic DNS on boot with boot email; About page; SiteNav rework; DMARC email authentication)
+**Last updated:** 2026-07-01 (Next.js; site nav; per-site deploy; WP trigger plugin; SendGrid HTML notifications; dynamic DNS on boot with boot email; About page; SiteNav rework; DMARC email authentication; Next.js nextjs.org palette + Geist font; active SiteNav link clickable; Docusaurus mobile navbar left-align)
 **Approach:** OpenSpec Spec-Anchored
 **Status:** Approved — implemented and live
 
@@ -335,16 +335,25 @@ Images uploaded to WordPress are instantly available at `/media/filename.jpg` on
 A 2rem-high horizontal bar rendered below the main header on every page of all three SSG sites. Bar contents (same on all sites):
 
 ```
-[Astro]  [Docusaurus]  [Next.js]  |  [WP Admin ↗]
+[About]  [Astro]  [Docu]  [Next.js]  [WP]  |  [Admin ↗]  [GitHub ↗]
 ```
 
-- Site links open in the same tab; current site is rendered as a `<span>` (no link) in accent colour
-- WP Admin (`https://wp.4eng.online/wp-admin/edit.php`) opens in a new tab
+| Link | URL | Behaviour |
+|------|-----|-----------|
+| About | `/about` | same tab — intra-site About page |
+| Astro | `https://astro.4eng.online` | same tab |
+| Docu | `https://docu.4eng.online` | same tab |
+| Next.js | `https://next.4eng.online` | same tab |
+| WP | `https://wp.4eng.online` | same tab — public WP site |
+| Admin ↗ | `https://wp.4eng.online/wp-admin/edit.php` | new tab |
+| GitHub ↗ | `https://github.com/JinB/sdd-demo` | new tab |
+
+- Current site rendered as `<a href="/" class="site-nav-link active">` — clickable, navigates to home (allows browsing back from About or any sub-page)
 - Separator is a 1px vertical line
 
 Implementation per framework:
 - **Astro**: `SiteNav.astro` injected after `<Header />` in each page template
-- **Docusaurus**: `src/theme/Root.js` swizzle injects `SiteNav.js` before `{children}` (appears above Docusaurus navbar)
+- **Docusaurus**: `src/theme/Root.js` swizzle injects `SiteNav.js` before `{children}`
 - **Next.js**: `SiteNav.tsx` injected after `<Header />` in root `layout.tsx`
 
 ---
@@ -387,6 +396,7 @@ Implementation per framework:
 - Posts have `title`, `date`, `tags`, `description` frontmatter; images injected as markdown `![](url)` in body
 - File naming: `YYYY-MM-DD-slug.md` (Docusaurus convention for date extraction)
 - Navbar title **"Eugenio Docusaurus"** is centered via CSS (`position: absolute; left: 50%; transform: translateX(-50%)`)
+- On narrow screens (≤480px) the absolute centering is reset and the title is left-aligned in normal flow (avoids overlap with the LiveClock)
 
 ### LiveClock (Navbar Item)
 - Registered as a custom navbar item type via `src/theme/NavbarItem/ComponentTypes.js` (Docusaurus swizzle pattern)
@@ -411,7 +421,13 @@ Implementation per framework:
 - Same `Intl.DateTimeFormat` timezone source as Astro
 
 ### Design System
-- Matches Astro: same CSS custom property names, same zinc/indigo palette, same dark mode via `.dark`
+- Palette matches **nextjs.org**: pure white/black backgrounds, `#0070F3` blue accent
+  - Light: `--bg: #ffffff`, `--text: #000000`, `--accent: #0070f3`
+  - Dark: `--bg: #000000`, `--bg-secondary: #111111`, `--text: #ffffff`, `--accent: #0070f3`
+- **Font**: Geist (Next.js's own typeface) loaded via `next/font/google`, exposed as `--font-geist` CSS variable
+- **Border radius**: `0.25rem` (sharper than Astro's `0.5rem`)
+- **Filter buttons and badges**: rectangular (`var(--radius)`), not pill-shaped
+- **Card hover in dark mode**: blue `box-shadow: 0 0 0 1px var(--accent)` outline instead of drop shadow
 
 ---
 
